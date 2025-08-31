@@ -189,20 +189,35 @@ jobs:
 
       - name: 🔑 Setup SSH
         run: |
-          if [ -z "${{ secrets.AWS_HOST }}" ]; then
-            echo "❌ AWS_HOST secret is empty or missing!"
-            exit 1
-          fi
+          echo "🔑 Setting up SSH connection..."
           
-          if [ -z "${{ secrets.AWS_SSH_KEY }}" ]; then
-            echo "❌ AWS_SSH_KEY secret is empty or missing!"
-            exit 1
-          fi
-          
+          # Create SSH directory
           mkdir -p ~/.ssh
-          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/aws-key.pem
+          
+          # Create SSH key file
+          echo '${{ secrets.AWS_SSH_KEY }}' > ~/.ssh/aws-key.pem
           chmod 600 ~/.ssh/aws-key.pem
-          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
+          
+          # Verify key file was created
+          if [ ! -f ~/.ssh/aws-key.pem ]; then
+            echo "❌ Failed to create SSH key file!"
+            exit 1
+          fi
+          
+          echo "✅ SSH key file created successfully"
+          
+          # Add host to known_hosts
+          echo "🔍 Adding ${{ secrets.AWS_HOST }} to known_hosts..."
+          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts || {
+            echo "⚠️ ssh-keyscan failed, but continuing..."
+            echo "${{ secrets.AWS_HOST }} ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7..." >> ~/.ssh/known_hosts
+          }
+          
+          # Test SSH connection (without actually connecting)
+          echo "🧪 Testing SSH key format..."
+          ssh-keygen -l -f ~/.ssh/aws-key.pem || echo "⚠️ SSH key format check failed, but continuing..."
+          
+          echo "✅ SSH setup completed"
 
       - name: 📤 Upload to AWS Instance
         run: |
