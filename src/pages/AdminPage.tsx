@@ -26,26 +26,34 @@ const AdminPage: React.FC = () => {
     // Mock data for now
     const mockBookings: BookingSlot[] = [
       {
+        _id: '1',
         id: '1',
         date: '2025-08-30',
         startTime: '10:00',
         endTime: '12:00',
         userId: '1',
         userName: 'John Doe',
+        artistName: 'John Doe',
         title: 'Band Practice',
         description: 'Weekly rehearsal',
+        status: 'confirmed',
+        priority: 'medium',
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
+        _id: '2',
         id: '2',
         date: '2025-08-31',
         startTime: '14:00',
         endTime: '16:00',
         userId: '2',
         userName: 'Jane Smith',
+        artistName: 'Jane Smith',
         title: 'Recording Session',
         description: 'Vocal recording',
+        status: 'confirmed',
+        priority: 'high',
         createdAt: new Date(),
         updatedAt: new Date()
       }

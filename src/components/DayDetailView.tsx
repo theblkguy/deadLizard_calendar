@@ -1,13 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
-import { BookingSlot } from '../types';
+import { BookingSlot, UserRole } from '../types';
 
 interface DayDetailViewProps {
   date: Date;
   bookings: BookingSlot[];
   onClose: () => void;
   onBookTimeSlot: () => void;
-  userRole: string;
+  userRole: UserRole;
 }
 
 const DayDetailView: React.FC<DayDetailViewProps> = ({ 
@@ -84,7 +84,7 @@ const DayDetailView: React.FC<DayDetailViewProps> = ({
         <BookingsContainer>
           <SectionHeader>
             <SectionTitle>Schedule for Today</SectionTitle>
-            {(userRole === 'admin' || userRole === 'user') && (
+            {(userRole === UserRole.ADMIN || userRole === UserRole.USER) && (
               <BookTimeButton onClick={onBookTimeSlot}>
                 + Book Time Slot
               </BookTimeButton>
@@ -96,7 +96,7 @@ const DayDetailView: React.FC<DayDetailViewProps> = ({
               <EmptyIcon>📅</EmptyIcon>
               <EmptyTitle>No bookings scheduled</EmptyTitle>
               <EmptyMessage>
-                {userRole === 'guest' 
+                {userRole === UserRole.GUEST 
                   ? 'The studio is available all day!'
                   : 'Click "Book Time Slot" to schedule studio time.'
                 }

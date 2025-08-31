@@ -19,7 +19,7 @@ import userRoutes from './routes/users';
 import accessRoutes from './routes/access';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
@@ -36,7 +36,7 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5000',
   credentials: true
 }));
 app.use(morgan('combined'));
