@@ -11,10 +11,10 @@ on:
       environment:
         description: 'Deployment Environment'
         required: true
-        default: 'production'
+        default: 'deadLizard_cal'
         type: choice
         options:
-          - production
+          - deadLizard_cal
           - staging
       force_deploy:
         description: 'Force deployment even if no changes'
@@ -143,7 +143,7 @@ jobs:
     needs: [check-changes, build-and-test]
     if: needs.check-changes.outputs.should-deploy == 'true'
     environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
+      name: ${{ github.event.inputs.environment || 'deadLizard_cal' }}
       url: https://deadlizardjam.online
 
     steps:
@@ -158,7 +158,7 @@ jobs:
       - name: 🔍 Debug Secrets
         run: |
           echo "🔍 Comprehensive secrets debugging..."
-          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "Environment: ${{ github.event.inputs.environment || 'deadLizard_cal' }}"
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref }}"
           echo "Event: ${{ github.event_name }}"
