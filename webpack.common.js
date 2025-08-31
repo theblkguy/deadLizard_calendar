@@ -1,6 +1,11 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const fs = require('fs');
+
+// Check if template exists
+const templatePath = path.join(__dirname, 'public', 'index.html');
+const templateExists = fs.existsSync(templatePath);
 
 module.exports = {
   entry: './src/index.tsx',
@@ -62,7 +67,7 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      template: './public/index.html',
+      ...(templateExists ? { template: templatePath } : {}),
       title: 'Dead Lizard Studio Calendar',
       inject: true
     })
