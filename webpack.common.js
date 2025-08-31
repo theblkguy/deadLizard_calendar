@@ -37,7 +37,16 @@ module.exports = {
       },
       {
         test: /\.s[ac]ss$/i,
-        use: ['style-loader', 'css-loader', 'sass-loader']
+        use: [
+          'style-loader', 
+          'css-loader', 
+          {
+            loader: 'sass-loader',
+            options: {
+              api: 'modern-compiler' // Use modern Sass API
+            }
+          }
+        ]
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif|ico)$/i,
