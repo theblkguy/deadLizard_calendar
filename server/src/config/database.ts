@@ -9,7 +9,11 @@ export const connectDB = async (): Promise<void> => {
     console.log('📊 MongoDB connected successfully');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
+    console.log('⚠️  Continuing without database - some features may not work');
+    // Don't exit process in development
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 

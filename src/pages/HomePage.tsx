@@ -4,33 +4,37 @@ import styled from 'styled-components';
 import { Container, Card, Button, Input, FormGroup, Label, ErrorMessage } from '../styles/GlobalStyle';
 import { UserRole } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { verifyAccessCode } from '../services/api';
 
 const HomePage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setRole } = useAuth();
 
-  // These would typically come from environment variables or a secure config
-  const PASSWORDS = {
-    guest: 'studio_guest_2024',
-    user: 'deadlizard_user_2024', 
-    admin: 'deadlizard_admin_2024'
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    if (password === PASSWORDS.guest) {
-      setRole(UserRole.GUEST);
-      navigate('/guest');
-    } else if (password === PASSWORDS.user) {
-      navigate('/login/user');
-    } else if (password === PASSWORDS.admin) {
-      navigate('/login/admin');
-    } else {
-      setError('Invalid password. Please try again.');
+    try {
+      const response = await verifyAccessCode(password);
+      
+      if (response.success) {
+        const role = response.role as UserRole;
+        setRole(role);
+        
+        // All users go to Google OAuth login regardless of role
+        navigate(`/login/${role}`);
+      } else {
+        setError(response.message || 'Invalid access code. Please try again.');
+      }
+    } catch (error) {
+      setError('Failed to verify access code. Please try again.');
+      console.error('Access code verification error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,8 +60,8 @@ const HomePage: React.FC = () => {
               {error && <ErrorMessage>{error}</ErrorMessage>}
             </FormGroup>
             
-            <Button type="submit" style={{ width: '100%' }}>
-              Access Studio Calendar
+            <Button type="submit" style={{ width: '100%' }} disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Access Studio Calendar'}
             </Button>
           </form>
           

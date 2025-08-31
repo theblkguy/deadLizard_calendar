@@ -4,7 +4,10 @@
   "description": "Studio booking calendar application with role-based access",
   "main": "server/dist/server.js",
   "scripts": {
-    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "dev": "npm run build:dev && cd server && npm run dev",
+    "dev:watch": "concurrently \"npm run client:watch\" \"cd server && npm run dev\"",
+    "client:watch": "webpack --config webpack.dev.js --watch",
+    "dev:single": "npm run build:dev && cd server && npm run dev",
     "server:dev": "cd server && npm run dev",
     "client:dev": "webpack serve --config webpack.dev.js --hot",
     "server": "cd server && npm run dev",

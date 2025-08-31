@@ -40,9 +40,52 @@ const CalendarPage: React.FC = () => {
         description: 'Weekly rehearsal',
         createdAt: new Date(),
         updatedAt: new Date()
+      },
+      {
+        id: '2',
+        date: '2025-08-31',
+        startTime: '14:00',
+        endTime: '16:00',
+        userId: '2',
+        userName: 'Jane Smith',
+        title: 'Recording Session',
+        description: 'Album recording',
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ];
     setBookings(mockBookings);
+  };
+
+  const canEditBooking = (booking: BookingSlot) => {
+    // Admin can edit any booking, Users can edit their own, Guests can't edit
+    return state.role === UserRole.ADMIN || 
+           (state.role === UserRole.USER && booking.userId === state.user?.id);
+  };
+
+  const canCreateBooking = () => {
+    // Only Users and Admins can create bookings, not Guests
+    return state.role === UserRole.USER || state.role === UserRole.ADMIN;
+  };
+
+  const handleCreateBooking = () => {
+    if (canCreateBooking()) {
+      setShowBookingForm(true);
+    }
+  };
+
+  const handleEditBooking = (booking: BookingSlot) => {
+    if (canEditBooking(booking)) {
+      // TODO: Implement inline editing
+      console.log('Edit booking:', booking);
+    }
+  };
+
+  const handleDeleteBooking = (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking && canEditBooking(booking)) {
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+    }
   };
 
     const handleDateChange = (value: any) => {
@@ -76,6 +119,11 @@ const CalendarPage: React.FC = () => {
           <HeaderContent>
             <Title>🦎 Studio Calendar</Title>
             <UserInfo>
+              <RoleDisplay>
+                {state.role === UserRole.ADMIN && '👑 Admin'}
+                {state.role === UserRole.USER && '🎵 User'}
+                {state.role === UserRole.GUEST && '👁️ Guest'}
+              </RoleDisplay>
               <WelcomeText>Welcome, {state.user?.name}</WelcomeText>
               <Button variant="secondary" onClick={handleLogout}>
                 Logout
@@ -100,15 +148,20 @@ const CalendarPage: React.FC = () => {
             <BookingsCard>
               <BookingsHeader>
                 <h3>{formatDate(selectedDate)}</h3>
-                <Button onClick={() => setShowBookingForm(true)}>
-                  Book Time
-                </Button>
+                {canCreateBooking() && (
+                  <Button onClick={handleCreateBooking}>
+                    {state.role === UserRole.ADMIN ? 'Add Event' : 'Book Time'}
+                  </Button>
+                )}
               </BookingsHeader>
 
               <BookingsList>
                 {filteredBookings.length === 0 ? (
                   <EmptyState>
-                    No bookings for this date. Click "Book Time" to reserve studio time.
+                    {state.role === UserRole.GUEST 
+                      ? 'No events scheduled for this date.'
+                      : 'No bookings for this date. Click "Book Time" to reserve studio time.'
+                    }
                   </EmptyState>
                 ) : (
                   filteredBookings.map(booking => (
@@ -123,10 +176,22 @@ const CalendarPage: React.FC = () => {
                           <BookingDescription>{booking.description}</BookingDescription>
                         )}
                       </BookingDetails>
-                      {(state.user?.id === booking.userId || state.role === UserRole.ADMIN) && (
+                      {canEditBooking(booking) && (
                         <BookingActions>
-                          <Button variant="secondary" size="sm">Edit</Button>
-                          <Button variant="danger" size="sm">Cancel</Button>
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onClick={() => handleEditBooking(booking)}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="danger" 
+                            size="sm"
+                            onClick={() => handleDeleteBooking(booking.id)}
+                          >
+                            {state.role === UserRole.ADMIN ? 'Delete' : 'Cancel'}
+                          </Button>
                         </BookingActions>
                       )}
                     </BookingItem>
@@ -180,6 +245,12 @@ const UserInfo = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.md};
+`;
+
+const RoleDisplay = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: bold;
+  font-size: 0.9rem;
 `;
 
 const WelcomeText = styled.span`

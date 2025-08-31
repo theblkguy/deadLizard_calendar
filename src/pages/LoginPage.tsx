@@ -13,40 +13,46 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     // If user is already authenticated, redirect to appropriate page
     if (state.isAuthenticated) {
-      if (state.role === UserRole.ADMIN) {
-        navigate('/admin');
-      } else {
-        navigate('/calendar');
-      }
+      // All users go to the same calendar page regardless of role
+      navigate('/calendar');
     }
-  }, [state.isAuthenticated, state.role, navigate]);
+  }, [state.isAuthenticated, navigate]);
 
   const handleGoogleLogin = () => {
     // This would integrate with Google OAuth
     // For now, we'll simulate a login
+    const roleMap = {
+      'guest': UserRole.GUEST,
+      'user': UserRole.USER, 
+      'admin': UserRole.ADMIN
+    };
+    
     const mockUser: User = {
       id: '1',
       email: 'user@deadlizardstudio.com',
       name: 'Studio User',
       picture: 'https://via.placeholder.com/40',
-      role: role === 'admin' ? UserRole.ADMIN : UserRole.USER
+      role: roleMap[role as keyof typeof roleMap] || UserRole.GUEST
     };
     
     login(mockUser);
     
-    // Redirect based on role
-    if (role === 'admin') {
-      navigate('/admin');
-    } else {
-      navigate('/calendar');
-    }
+    // All users go to the same calendar page
+    navigate('/calendar');
   };
 
   const handleBackToHome = () => {
     navigate('/');
   };
 
-  const isAdminLogin = role === 'admin';
+  const getRoleDisplayName = () => {
+    switch(role) {
+      case 'guest': return 'Guest';
+      case 'user': return 'User'; 
+      case 'admin': return 'Admin';
+      default: return 'User';
+    }
+  };
 
   return (
     <LoginContainer>
@@ -54,12 +60,14 @@ const LoginPage: React.FC = () => {
         <LoginCard>
           <StudioLogo>🦎</StudioLogo>
           <Title>
-            {isAdminLogin ? 'Admin Login' : 'User Login'}
+            {getRoleDisplayName()} Login
           </Title>
           <Subtitle>
-            {isAdminLogin 
+            {role === 'admin' 
               ? 'Sign in to manage the studio calendar'
-              : 'Sign in to book studio time'
+              : role === 'user'
+              ? 'Sign in to book studio time'
+              : 'Sign in to view the studio calendar'
             }
           </Subtitle>
           
@@ -75,9 +83,11 @@ const LoginPage: React.FC = () => {
           </ButtonGroup>
           
           <Note>
-            {isAdminLogin 
+            {role === 'admin' 
               ? 'Admin accounts have full calendar management privileges.'
-              : 'User accounts can book and manage their own studio sessions.'
+              : role === 'user'
+              ? 'User accounts can book and manage their own studio sessions.'
+              : 'Guest accounts have view-only access to the calendar.'
             }
           </Note>
         </LoginCard>

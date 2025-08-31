@@ -1,3 +1,7 @@
+// Load environment variables FIRST
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -5,7 +9,6 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import passport from 'passport';
-import dotenv from 'dotenv';
 import { connectDB } from './config/database';
 import { configurePassport } from './config/passport';
 
@@ -13,12 +16,10 @@ import { configurePassport } from './config/passport';
 import authRoutes from './routes/auth';
 import bookingRoutes from './routes/bookings';
 import userRoutes from './routes/users';
-
-// Load environment variables
-dotenv.config();
+import accessRoutes from './routes/access';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
 connectDB();
@@ -58,7 +59,14 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Serve static files in development
+if (process.env.NODE_ENV !== 'production') {
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, '../../dist')));
+}
+
 // Routes
+app.use('/api/access', accessRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
@@ -81,10 +89,23 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found' });
-});
+// Serve React app for all non-API routes in development
+if (process.env.NODE_ENV !== 'production') {
+  const path = require('path');
+  app.get('*', (req, res) => {
+    // Only serve React app for non-API routes
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, '../../dist/index.html'));
+    } else {
+      res.status(404).json({ message: 'API endpoint not found' });
+    }
+  });
+} else {
+  // 404 handler for production
+  app.use('*', (req, res) => {
+    res.status(404).json({ message: 'API endpoint not found' });
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`🦎 Dead Lizard Calendar API running on port ${PORT}`);
