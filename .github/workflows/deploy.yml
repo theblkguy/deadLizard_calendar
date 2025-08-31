@@ -155,8 +155,25 @@ jobs:
         with:
           name: deployment-package
 
-      - name:  Setup SSH
+      - name: � Debug Secrets
         run: |
+          echo "🔍 Checking secrets availability..."
+          echo "AWS_HOST provided: ${{ secrets.AWS_HOST != '' }}"
+          echo "AWS_USER provided: ${{ secrets.AWS_USER != '' }}"
+          echo "AWS_SSH_KEY provided: ${{ secrets.AWS_SSH_KEY != '' }}"
+
+      - name: 🔑 Setup SSH
+        run: |
+          if [ -z "${{ secrets.AWS_HOST }}" ]; then
+            echo "❌ AWS_HOST secret is empty or missing!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.AWS_SSH_KEY }}" ]; then
+            echo "❌ AWS_SSH_KEY secret is empty or missing!"
+            exit 1
+          fi
+          
           mkdir -p ~/.ssh
           echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/aws-key.pem
           chmod 600 ~/.ssh/aws-key.pem
