@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import CalendarPage from './pages/CalendarPage';
 import AdminPage from './pages/AdminPage';
 import GuestCalendarPage from './pages/GuestCalendarPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { GlobalStyle, theme } from './styles/GlobalStyle';
 
@@ -18,6 +19,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login/:role" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/guest" element={<GuestCalendarPage />} />

@@ -69,6 +69,11 @@ const BookingSchema: Schema = new Schema({
     type: String,
     enum: ['confirmed', 'pending', 'cancelled'],
     default: 'confirmed'
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'normal', 'medium', 'high'],
+    default: 'normal'
   }
 }, {
   timestamps: true

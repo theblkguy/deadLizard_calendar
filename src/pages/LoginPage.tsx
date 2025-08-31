@@ -19,26 +19,11 @@ const LoginPage: React.FC = () => {
   }, [state.isAuthenticated, navigate]);
 
   const handleGoogleLogin = () => {
-    // This would integrate with Google OAuth
-    // For now, we'll simulate a login
-    const roleMap = {
-      'guest': UserRole.GUEST,
-      'user': UserRole.USER, 
-      'admin': UserRole.ADMIN
-    };
+    // Store the user's role in sessionStorage so we can assign it after OAuth
+    sessionStorage.setItem('pendingUserRole', role || 'guest');
     
-    const mockUser: User = {
-      id: '1',
-      email: 'user@deadlizardstudio.com',
-      name: 'Studio User',
-      picture: 'https://via.placeholder.com/40',
-      role: roleMap[role as keyof typeof roleMap] || UserRole.GUEST
-    };
-    
-    login(mockUser);
-    
-    // All users go to the same calendar page
-    navigate('/calendar');
+    // Redirect to the backend Google OAuth endpoint
+    window.location.href = `http://localhost:5000/api/auth/google?role=${role}`;
   };
 
   const handleBackToHome = () => {

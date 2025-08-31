@@ -13,14 +13,18 @@ export enum UserRole {
 }
 
 export interface BookingSlot {
+  _id: string;
   id: string;
   date: string;
   startTime: string;
   endTime: string;
   userId: string;
   userName: string;
-  title?: string;
+  artistName: string; // alias for userName to be more descriptive
+  title: string;
   description?: string;
+  status: 'confirmed' | 'pending' | 'cancelled';
+  priority?: 'low' | 'normal' | 'medium' | 'high';
   createdAt: Date;
   updatedAt: Date;
 }

@@ -62,6 +62,36 @@ router.get('/date/:date', async (req: any, res: any) => {
   }
 });
 
+// Get bookings for a specific month (public for calendar view)
+router.get('/month/:year/:month', async (req: any, res: any) => {
+  try {
+    const { year, month } = req.params;
+    
+    // Validate year and month
+    const yearNum = parseInt(year);
+    const monthNum = parseInt(month);
+    
+    if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({ message: 'Invalid year or month' });
+    }
+    
+    // Create date range for the month
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const endDate = new Date(yearNum, monthNum, 0); // Last day of month
+    const endDateStr = `${year}-${(monthNum).toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}`;
+    
+    const bookings = await Booking.find({
+      date: { $gte: startDate, $lte: endDateStr },
+      status: 'confirmed'
+    }).select('_id date startTime endTime title description userName status priority').sort({ date: 1, startTime: 1 });
+    
+    res.json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings for month:', error);
+    res.status(500).json({ message: 'Error fetching bookings' });
+  }
+});
+
 // Create a new booking
 router.post('/', 
   authenticate,
