@@ -1,8 +1,8 @@
 // Main mobile-optimized styles entry point
-@import 'variables';
-@import 'mixins';
-@import 'calendar';
-@import 'day-detail';
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'calendar';
+@use 'day-detail';
 
 // Global mobile optimizations
 * {

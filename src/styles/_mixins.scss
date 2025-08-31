@@ -1,5 +1,5 @@
 // Mixins for responsive design
-@import 'variables';
+@use 'variables' as *;
 
 // Media queries
 @mixin mobile {

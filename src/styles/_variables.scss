@@ -54,12 +54,14 @@ $transitions: (
 );
 
 // Helper functions
+@use 'sass:map';
+
 @function color($key) {
-  @return map-get($colors, $key);
+  @return map.get($colors, $key);
 }
 
 @function spacing($key) {
-  @return map-get($spacing, $key);
+  @return map.get($spacing, $key);
 }
 
 @function shadow($key) {
@@ -67,17 +69,17 @@ $transitions: (
 }
 
 @function font($key) {
-  @return map-get($fonts, $key);
+  @return map.get($fonts, $key);
 }
 
 @function breakpoint($key) {
-  @return map-get($breakpoints, $key);
+  @return map.get($breakpoints, $key);
 }
 
 @function z($key) {
-  @return map-get($z-index, $key);
+  @return map.get($z-index, $key);
 }
 
 @function transition($key) {
-  @return map-get($transitions, $key);
+  @return map.get($transitions, $key);
 }
