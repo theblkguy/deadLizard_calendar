@@ -28,7 +28,7 @@ on:
 
 env:
   NODE_VERSION: '18'
-  AWS_REGION: 'us-east-1'  # Change to your AWS region
+  AWS_REGION: 'us-east-2'  # Change to your AWS region
 
 jobs:
   check-changes:
