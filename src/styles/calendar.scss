@@ -1,6 +1,6 @@
 // Mobile-optimized calendar styles
-@import 'variables';
-@import 'mixins';
+@use 'variables' as *;
+@use 'mixins' as *;
 
 .calendar-page {
   min-height: 100vh;

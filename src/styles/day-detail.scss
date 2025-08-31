@@ -1,6 +1,6 @@
 // Day detail view mobile optimization
-@import 'variables';
-@import 'mixins';
+@use 'variables' as *;
+@use 'mixins' as *;
 
 .day-detail-modal {
   @include modal-backdrop;
