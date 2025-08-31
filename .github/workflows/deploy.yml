@@ -262,19 +262,53 @@ jobs:
             cd $APP_DIR/server
             sudo npm ci --only=production
             
+            # Build the server
+            echo "🔨 Building server..."
+            sudo npm run build
+            
+            # Create production environment file
+            echo "🔧 Setting up production environment..."
+            sudo tee $APP_DIR/server/.env > /dev/null <<EOF
+            NODE_ENV=production
+            PORT=5000
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            FRONTEND_URL=https://deadlizardjam.online
+            GUEST_ACCESS_CODE=${{ secrets.GUEST_ACCESS_CODE }}
+            USER_ACCESS_CODE=${{ secrets.USER_ACCESS_CODE }}
+            ADMIN_ACCESS_CODE=${{ secrets.ADMIN_ACCESS_CODE }}
+            EOF
+            
+            # Set secure permissions for environment file
+            sudo chmod 600 $APP_DIR/server/.env
+            sudo chown ubuntu:ubuntu $APP_DIR/server/.env
+            
+            # Install systemd service
+            echo "⚙️ Installing systemd service..."
+            sudo cp $APP_DIR/deadlizard-calendar.service /etc/systemd/system/
+            sudo systemctl daemon-reload
+            sudo systemctl enable deadlizard-calendar
+            
+            # Configure nginx
+            echo "🌐 Configuring nginx..."
+            sudo cp $APP_DIR/nginx-deadlizard.conf /etc/nginx/sites-available/deadlizard
+            sudo ln -sf /etc/nginx/sites-available/deadlizard /etc/nginx/sites-enabled/deadlizard
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t && sudo systemctl reload nginx
+            
             # Set permissions
             sudo chown -R $USER:$USER $APP_DIR
             sudo chmod +x $APP_DIR/deploy.sh
             
             # Start the application
             echo "▶️ Starting application..."
-            sudo systemctl start $SERVICE_NAME || {
-              echo "🔄 Service not found, starting with PM2..."
-              cd $APP_DIR/server
-              pm2 stop deadlizard-calendar || true
-              pm2 start dist/server.js --name deadlizard-calendar
-              pm2 save
-            }
+            sudo systemctl restart deadlizard-calendar
+            sudo systemctl status deadlizard-calendar --no-pager
             
             # Health check
             echo "🏥 Performing health check..."
