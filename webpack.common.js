@@ -62,8 +62,9 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'public', 'index.html'),
-      title: 'Dead Lizard Studio Calendar'
+      template: './public/index.html',
+      title: 'Dead Lizard Studio Calendar',
+      inject: true
     })
   ],
   
