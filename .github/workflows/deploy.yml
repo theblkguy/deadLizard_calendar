@@ -155,12 +155,37 @@ jobs:
         with:
           name: deployment-package
 
-      - name: � Debug Secrets
+      - name: 🔍 Debug Secrets
         run: |
-          echo "🔍 Checking secrets availability..."
-          echo "AWS_HOST provided: ${{ secrets.AWS_HOST != '' }}"
-          echo "AWS_USER provided: ${{ secrets.AWS_USER != '' }}"
-          echo "AWS_SSH_KEY provided: ${{ secrets.AWS_SSH_KEY != '' }}"
+          echo "🔍 Comprehensive secrets debugging..."
+          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+          echo ""
+          echo "Testing secret availability:"
+          if [ -n "${{ secrets.AWS_HOST }}" ]; then
+            echo "✅ AWS_HOST: Available (length: ${#AWS_HOST})"
+            echo "   First 3 chars: $(echo '${{ secrets.AWS_HOST }}' | cut -c1-3)"
+          else
+            echo "❌ AWS_HOST: Missing or empty"
+          fi
+          
+          if [ -n "${{ secrets.AWS_USER }}" ]; then
+            echo "✅ AWS_USER: Available"
+          else
+            echo "❌ AWS_USER: Missing or empty"
+          fi
+          
+          if [ -n "${{ secrets.AWS_SSH_KEY }}" ]; then
+            echo "✅ AWS_SSH_KEY: Available (length: ${#SSH_KEY})"
+            echo "   Starts with: $(echo '${{ secrets.AWS_SSH_KEY }}' | head -c 30)..."
+          else
+            echo "❌ AWS_SSH_KEY: Missing or empty"
+          fi
+        env:
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
 
       - name: 🔑 Setup SSH
         run: |
