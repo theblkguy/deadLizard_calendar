@@ -1,0 +1,181 @@
+// Mixins for responsive design
+@import 'variables';
+
+// Media queries
+@mixin mobile {
+  @media (max-width: breakpoint(mobile)) {
+    @content;
+  }
+}
+
+@mixin mobile-up {
+  @media (min-width: breakpoint(mobile)) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: breakpoint(tablet)) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: breakpoint(tablet)) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (max-width: breakpoint(desktop)) {
+    @content;
+  }
+}
+
+@mixin desktop-up {
+  @media (min-width: breakpoint(desktop)) {
+    @content;
+  }
+}
+
+@mixin large-up {
+  @media (min-width: breakpoint(large)) {
+    @content;
+  }
+}
+
+// Touch-friendly buttons
+@mixin touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: spacing(sm) spacing(md);
+  
+  @include mobile {
+    min-height: 48px;
+    min-width: 48px;
+    padding: spacing(md) spacing(lg);
+    font-size: 16px; // Prevents zoom on iOS
+  }
+}
+
+// Container with responsive padding
+@mixin container {
+  max-width: breakpoint(large);
+  margin: 0 auto;
+  padding: 0 spacing(md);
+  
+  @include mobile {
+    padding: 0 spacing(sm);
+  }
+  
+  @include large-up {
+    padding: 0 spacing(xl);
+  }
+}
+
+// Card component with responsive padding
+@mixin card {
+  background: color(surface);
+  border-radius: 8px;
+  padding: spacing(lg);
+  box-shadow: shadow(sm);
+  border: 1px solid color(border);
+  
+  @include mobile {
+    padding: spacing(md);
+    border-radius: 6px;
+  }
+}
+
+// Flexbox helpers
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Text truncation
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Focus styles for accessibility
+@mixin focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px color(primary-light);
+  
+  @include mobile {
+    box-shadow: 0 0 0 3px color(primary-light);
+  }
+}
+
+// Modal backdrop
+@mixin modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: color(overlay);
+  z-index: z(modal);
+}
+
+// Calendar tile styling
+@mixin calendar-tile {
+  position: relative;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transition(fast);
+  
+  @include mobile {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  &:hover {
+    background: color(primary-light);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+// Form input styling
+@mixin form-input {
+  width: 100%;
+  padding: spacing(sm) spacing(md);
+  border: 1px solid color(border);
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color transition(fast);
+  
+  @include mobile {
+    padding: spacing(md);
+    font-size: 16px; // Prevents zoom on iOS
+  }
+  
+  &:focus {
+    border-color: color(primary);
+    @include focus-ring;
+  }
+  
+  &::placeholder {
+    color: color(text-secondary);
+  }
+}

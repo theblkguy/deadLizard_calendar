@@ -1,0 +1,632 @@
+// Mobile-optimized calendar styles
+@import 'variables';
+@import 'mixins';
+
+.calendar-page {
+  min-height: 100vh;
+  background-color: color(background);
+  
+  .header {
+    background-color: color(surface);
+    border-bottom: 1px solid color(border);
+    padding: spacing(lg) 0;
+    position: sticky;
+    top: 0;
+    z-index: z(header);
+    
+    @include mobile {
+      padding: spacing(md) 0;
+    }
+    
+    .header-content {
+      @include container;
+      @include flex-between;
+      
+      @include mobile {
+        flex-direction: column;
+        gap: spacing(md);
+        align-items: stretch;
+      }
+    }
+    
+    .title {
+      color: color(primary);
+      font-size: 1.8rem;
+      margin: 0;
+      
+      @include mobile {
+        font-size: 1.5rem;
+        text-align: center;
+      }
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: spacing(md);
+      
+      @include mobile {
+        justify-content: space-between;
+        gap: spacing(sm);
+      }
+      
+      .role-display {
+        color: color(primary);
+        font-weight: bold;
+        font-size: 0.9rem;
+        
+        @include mobile {
+          font-size: 0.8rem;
+        }
+      }
+      
+      .welcome-text {
+        color: color(text);
+        
+        @include mobile {
+          @include text-ellipsis;
+          max-width: 150px;
+        }
+      }
+      
+      .logout-btn {
+        @include touch-button;
+        background-color: color(primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: transition(fast);
+        
+        @include mobile {
+          width: 100%;
+          justify-content: center;
+        }
+        
+        &:hover {
+          background-color: darken(color(primary), 10%);
+        }
+      }
+    }
+  }
+  
+  .main-content {
+    @include container;
+    padding-top: spacing(xl);
+    padding-bottom: spacing(xl);
+    
+    @include mobile {
+      padding-top: spacing(lg);
+      padding-bottom: spacing(lg);
+      padding-left: 0;
+      padding-right: 0;
+      overflow-x: hidden;
+    }
+  }
+  
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: spacing(xl);
+    
+    @include tablet {
+      grid-template-columns: 1fr;
+      gap: spacing(lg);
+    }
+    
+    @include mobile {
+      gap: spacing(md);
+    }
+  }
+  
+  .calendar-card,
+  .bookings-card {
+    @include card;
+    
+    @include mobile {
+      margin: 0 -#{spacing(sm)};
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+  }
+  
+  .calendar-title {
+    margin-bottom: spacing(lg);
+    color: color(text);
+    font-size: 1.2rem;
+    
+    @include mobile {
+      margin-bottom: spacing(md);
+      font-size: 1.1rem;
+    }
+  }
+  
+  // React Calendar mobile optimizations
+  .react-calendar {
+    width: 100%;
+    background: white;
+    border: 1px solid color(border);
+    font-family: font(primary);
+    border-radius: 8px;
+    overflow: hidden;
+    
+    @include mobile {
+      border-radius: 6px;
+      margin: 0 -#{spacing(sm)};
+      width: calc(100% + #{spacing(md)});
+      border-left: none;
+      border-right: none;
+    }
+    
+    .react-calendar__navigation {
+      @include mobile {
+        height: 50px;
+        
+        button {
+          @include touch-button;
+          font-size: 1rem;
+          flex: 1;
+          max-width: none;
+        }
+      }
+    }
+    
+    .react-calendar__month-view__weekdays {
+      @include mobile {
+        font-size: 0.8rem;
+        
+        .react-calendar__month-view__weekdays__weekday {
+          padding: spacing(sm);
+        }
+      }
+    }
+    
+    .react-calendar__tile {
+      @include calendar-tile;
+      
+      @include mobile {
+        min-height: 44px;
+        padding: spacing(xs);
+      }
+      
+      &--active {
+        background: color(primary);
+        color: white;
+        
+        &:hover {
+          background: darken(color(primary), 5%);
+        }
+      }
+      
+      &--now {
+        background: color(primary-light);
+        color: color(primary);
+        font-weight: bold;
+      }
+      
+      &--hasActive {
+        background: color(primary);
+        color: white;
+      }
+      
+      .calendar-dot {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        
+        @include mobile {
+          bottom: 2px;
+          right: 2px;
+        }
+        
+        .dot {
+          width: 6px;
+          height: 6px;
+          background: color(primary);
+          border-radius: 50%;
+          
+          @include mobile {
+            width: 4px;
+            height: 4px;
+          }
+        }
+        
+        .count {
+          background: color(primary);
+          color: white;
+          border-radius: 50%;
+          width: 14px;
+          height: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+          font-weight: bold;
+          
+          @include mobile {
+            width: 12px;
+            height: 12px;
+            font-size: 7px;
+          }
+        }
+      }
+    }
+  }
+  
+  .bookings-header {
+    @include flex-between;
+    margin-bottom: spacing(lg);
+    
+    @include mobile {
+      flex-direction: column;
+      align-items: stretch;
+      gap: spacing(md);
+      margin-bottom: spacing(md);
+    }
+    
+    h3 {
+      color: color(text);
+      margin: 0;
+      
+      @include mobile {
+        text-align: center;
+      }
+    }
+    
+    .add-booking-btn {
+      @include touch-button;
+      background-color: color(primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transition(fast);
+      
+      @include mobile {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      &:hover {
+        background-color: darken(color(primary), 10%);
+      }
+    }
+  }
+  
+  .bookings-list {
+    @include flex-column;
+    gap: spacing(md);
+    
+    @include mobile {
+      gap: spacing(sm);
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    color: color(text-secondary);
+    padding: spacing(xl);
+    border: 2px dashed color(border);
+    border-radius: 8px;
+    
+    @include mobile {
+      padding: spacing(lg);
+      font-size: 0.9rem;
+    }
+  }
+  
+  .booking-item {
+    display: flex;
+    gap: spacing(md);
+    padding: spacing(md);
+    border: 1px solid color(border);
+    border-radius: 6px;
+    background-color: color(surface);
+    transition: transition(fast);
+    
+    @include mobile {
+      flex-direction: column;
+      gap: spacing(sm);
+      padding: spacing(sm);
+    }
+    
+    &:hover {
+      border-color: color(primary);
+      box-shadow: shadow(md);
+    }
+    
+    .booking-time {
+      @include flex-column;
+      gap: spacing(xs);
+      font-weight: bold;
+      color: color(primary);
+      min-width: 140px;
+      
+      @include mobile {
+        min-width: auto;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .time-range {
+        font-size: 0.95rem;
+        
+        @include mobile {
+          font-size: 0.9rem;
+        }
+      }
+      
+      .duration {
+        font-size: 0.8rem;
+        color: color(text-secondary);
+        font-weight: normal;
+        
+        @include mobile {
+          font-size: 0.75rem;
+        }
+      }
+    }
+    
+    .booking-details {
+      flex: 1;
+      
+      .booking-title {
+        font-weight: 500;
+        margin-bottom: spacing(xs);
+        
+        @include mobile {
+          font-size: 0.95rem;
+        }
+      }
+      
+      .booking-user {
+        color: color(text-secondary);
+        font-size: 0.9rem;
+        
+        @include mobile {
+          font-size: 0.8rem;
+        }
+      }
+      
+      .booking-description {
+        color: color(text-secondary);
+        font-size: 0.9rem;
+        margin-top: spacing(xs);
+        
+        @include mobile {
+          font-size: 0.8rem;
+        }
+      }
+    }
+    
+      .booking-actions {
+        display: flex;
+        gap: spacing(xs);
+        
+        @include mobile {
+          justify-content: flex-end;
+          gap: spacing(sm);
+          width: 100%;
+          
+          button {
+            flex: 1;
+            max-width: 80px;
+          }
+        }      button {
+        @include touch-button;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: transition(fast);
+        
+        @include mobile {
+          font-size: 0.75rem;
+          padding: spacing(xs) spacing(sm);
+        }
+        
+        &.edit-btn {
+          background-color: color(primary);
+          color: white;
+          
+          &:hover {
+            background-color: darken(color(primary), 10%);
+          }
+        }
+        
+        &.delete-btn {
+          background-color: color(error);
+          color: white;
+          
+          &:hover {
+            background-color: darken(color(error), 10%);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Modal styles for mobile
+.booking-modal {
+  @include modal-backdrop;
+  @include flex-center;
+  padding: spacing(md);
+  
+  @include mobile {
+    padding: spacing(sm);
+    align-items: flex-start;
+    padding-top: spacing(xl);
+  }
+  
+  .modal-content {
+    background: color(surface);
+    padding: spacing(xl);
+    border-radius: 8px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    
+    @include mobile {
+      padding: spacing(lg);
+      border-radius: 6px;
+      max-width: none;
+      width: calc(100% - #{spacing(sm) * 2});
+      max-height: 85vh;
+    }
+  }
+  
+  .modal-header {
+    @include flex-between;
+    margin-bottom: spacing(lg);
+    
+    @include mobile {
+      margin-bottom: spacing(md);
+    }
+    
+    h2 {
+      margin: 0;
+      color: color(text);
+      
+      @include mobile {
+        font-size: 1.2rem;
+      }
+    }
+    
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: color(text-secondary);
+      padding: spacing(xs);
+      
+      @include mobile {
+        @include touch-button;
+        font-size: 1.2rem;
+      }
+      
+      &:hover {
+        color: color(text);
+      }
+    }
+  }
+  
+  .booking-form {
+    @include flex-column;
+    gap: spacing(md);
+    
+    .form-group {
+      @include flex-column;
+      gap: spacing(xs);
+      
+      label {
+        font-weight: 500;
+        color: color(text);
+        font-size: 0.9rem;
+      }
+      
+      input,
+      textarea {
+        @include form-input;
+      }
+      
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+        
+        @include mobile {
+          min-height: 100px;
+        }
+      }
+    }
+    
+    .time-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: spacing(md);
+      
+      @include mobile {
+        grid-template-columns: 1fr;
+        gap: spacing(sm);
+      }
+    }
+    
+    .selected-date-display {
+      background: color(background);
+      padding: spacing(sm);
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 500;
+      color: color(primary);
+      border: 1px solid color(border);
+      
+      @include mobile {
+        padding: spacing(md);
+        font-size: 0.9rem;
+      }
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: spacing(md);
+      justify-content: flex-end;
+      margin-top: spacing(lg);
+      
+      @include mobile {
+        flex-direction: column-reverse;
+        gap: spacing(sm);
+        margin-top: spacing(md);
+      }
+      
+      button {
+        @include touch-button;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: transition(fast);
+        
+        @include mobile {
+          width: 100%;
+          justify-content: center;
+        }
+        
+        &.primary {
+          background-color: color(primary);
+          color: white;
+          
+          @include mobile {
+            order: -1; // Put primary button first on mobile
+          }
+          
+          &:hover {
+            background-color: darken(color(primary), 10%);
+          }
+          
+          &:disabled {
+            background-color: color(text-secondary);
+            cursor: not-allowed;
+          }
+        }
+        
+        &.secondary {
+          background-color: transparent;
+          color: color(text-secondary);
+          border: 1px solid color(border);
+          
+          &:hover {
+            background-color: color(background);
+          }
+        }
+      }
+    }
+  }
+}

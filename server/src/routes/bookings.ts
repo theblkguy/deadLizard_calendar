@@ -7,7 +7,35 @@ import User from '../models/User';
 const router = express.Router();
 
 // Middleware to authenticate user
-const authenticate = passport.authenticate('jwt', { session: false });
+const authenticate = (req: any, res: any, next: any) => {
+  console.log('🔍 Authentication check:', {
+    headers: req.headers.authorization ? 'Authorization header present' : 'No authorization header',
+    userAgent: req.headers['user-agent']?.substring(0, 50),
+    method: req.method,
+    path: req.path
+  });
+  
+  passport.authenticate('jwt', { session: false }, (err: any, user: any, info: any) => {
+    if (err) {
+      console.error('❌ JWT Auth Error:', err);
+      return res.status(500).json({ message: 'Authentication error' });
+    }
+    
+    if (!user) {
+      console.log('❌ JWT Auth Failed:', info?.message || 'No user found');
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    console.log('✅ JWT Auth Success:', {
+      userId: user._id,
+      email: user.email,
+      role: user.role
+    });
+    
+    req.user = user;
+    next();
+  })(req, res, next);
+};
 
 // Middleware to check admin role
 const requireAdmin = (req: any, res: any, next: any) => {
@@ -198,6 +226,22 @@ router.put('/:id', authenticate, async (req: any, res: any) => {
   } catch (error) {
     console.error('Error updating booking:', error);
     res.status(500).json({ message: 'Error updating booking' });
+  }
+});
+
+// Clear all bookings (admin only - for development)
+router.delete('/admin/clear-all', authenticate, requireAdmin, async (req: any, res: any) => {
+  try {
+    const result = await Booking.deleteMany({});
+    console.log(`🗑️ Cleared ${result.deletedCount} bookings from database`);
+    
+    res.json({ 
+      message: 'All bookings cleared successfully',
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error clearing bookings:', error);
+    res.status(500).json({ message: 'Error clearing bookings' });
   }
 });
 

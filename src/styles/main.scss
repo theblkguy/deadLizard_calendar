@@ -1,0 +1,167 @@
+// Main mobile-optimized styles entry point
+@import 'variables';
+@import 'mixins';
+@import 'calendar';
+@import 'day-detail';
+
+// Global mobile optimizations
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  
+  @include mobile {
+    font-size: 14px;
+  }
+}
+
+body {
+  font-family: font(primary);
+  background-color: color(background);
+  color: color(text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  // Prevent zoom on input focus for iOS
+  @include mobile {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+#root {
+  min-height: 100vh;
+}
+
+// Touch-friendly interactive elements
+button, 
+input[type="submit"], 
+input[type="button"] {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: transition(fast);
+  
+  @include mobile {
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+input, 
+textarea, 
+select {
+  font-family: inherit;
+  outline: none;
+  
+  @include mobile {
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  
+  @include mobile {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+ul, ol {
+  list-style: none;
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .react-calendar__tile {
+    border: 2px solid color(text);
+    
+    &--active {
+      border-color: white;
+    }
+  }
+}
+
+// Dark mode support (for future implementation)
+@media (prefers-color-scheme: dark) {
+  // Variables can be overridden here when dark mode is implemented
+}
+
+// Print styles
+@media print {
+  .booking-modal,
+  .day-detail-modal {
+    display: none;
+  }
+  
+  .calendar-page {
+    .header .user-info .logout-btn,
+    .bookings-header .add-booking-btn,
+    .booking-actions {
+      display: none;
+    }
+  }
+}
+
+// Utility classes for responsive behavior
+.mobile-only {
+  display: none;
+  
+  @include mobile {
+    display: block;
+  }
+}
+
+.mobile-hidden {
+  @include mobile {
+    display: none;
+  }
+}
+
+.tablet-only {
+  display: none;
+  
+  @include tablet {
+    display: block;
+  }
+}
+
+.tablet-hidden {
+  @include tablet {
+    display: none;
+  }
+}
+
+.desktop-only {
+  @include desktop-up {
+    display: block;
+  }
+  
+  @include desktop {
+    display: none;
+  }
+}

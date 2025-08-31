@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { Container, Card, Button } from '../styles/GlobalStyle';
 import { BookingSlot, UserRole } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { clearAllBookings } from '../services/api';
 
 const AdminPage: React.FC = () => {
   const [bookings, setBookings] = useState<BookingSlot[]>([]);
@@ -76,6 +77,20 @@ const AdminPage: React.FC = () => {
     setBookings(bookings.filter(b => b.id !== bookingId));
   };
 
+  const handleClearAllBookings = async () => {
+    if (window.confirm('⚠️ Are you sure you want to delete ALL bookings? This action cannot be undone!')) {
+      try {
+        await clearAllBookings();
+        alert('✅ All bookings have been cleared from the database!');
+        // Reload the page to refresh the calendar
+        window.location.reload();
+      } catch (error) {
+        alert('❌ Error clearing bookings: ' + (error as Error).message);
+        console.error('Error clearing bookings:', error);
+      }
+    }
+  };
+
   return (
     <AdminContainer>
       <Header>
@@ -122,8 +137,15 @@ const AdminPage: React.FC = () => {
                 <Button style={{ width: '100%', marginBottom: '1rem' }}>
                   Export Calendar
                 </Button>
-                <Button style={{ width: '100%' }}>
+                <Button style={{ width: '100%', marginBottom: '1rem' }}>
                   Studio Settings
+                </Button>
+                <Button 
+                  variant="danger" 
+                  style={{ width: '100%', backgroundColor: '#dc3545', color: 'white' }}
+                  onClick={handleClearAllBookings}
+                >
+                  🗑️ Clear All Bookings
                 </Button>
               </ActionsList>
             </ActionsCard>

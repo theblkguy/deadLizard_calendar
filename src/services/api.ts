@@ -8,7 +8,21 @@ export interface AccessCodeResponse {
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('token');
+  console.log('🔍 Token check:', token ? 'Token found' : 'No token found');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('🔍 Token payload:', { 
+        userId: payload.userId, 
+        email: payload.email, 
+        role: payload.role,
+        exp: new Date(payload.exp * 1000)
+      });
+    } catch (e) {
+      console.error('🔍 Token parsing error:', e);
+    }
+  }
   return {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Bearer ${token}` })
@@ -54,6 +68,26 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     return await response.json();
   } catch (error) {
     console.error('API call error:', error);
+    throw error;
+  }
+};
+
+// Clear all bookings (admin only)
+export const clearAllBookings = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/bookings/admin/clear-all`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to clear bookings');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error clearing bookings:', error);
     throw error;
   }
 };

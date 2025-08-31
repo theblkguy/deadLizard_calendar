@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import Calendar from 'react-calendar';
-import { Container, Card, Button } from '../styles/GlobalStyle';
 import { BookingSlot, UserRole } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import DayDetailView from '../components/DayDetailView';
+import '../styles/main.scss';
 import 'react-calendar/dist/Calendar.css';
 
 const CalendarPage: React.FC = () => {
@@ -14,6 +13,7 @@ const CalendarPage: React.FC = () => {
   const [selectedDateBookings, setSelectedDateBookings] = useState<BookingSlot[]>([]);
   const [showDayDetail, setShowDayDetail] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<BookingSlot | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -138,39 +138,79 @@ const CalendarPage: React.FC = () => {
         description: formData.description
       };
 
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bookingData)
-      });
+      if (editingBooking) {
+        // Update existing booking
+        const response = await fetch(`/api/bookings/${editingBooking._id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookingData)
+        });
 
-      if (response.ok) {
-        const newBooking = await response.json();
-        // Add the new booking to our state
-        const mappedBooking = {
-          ...newBooking,
-          _id: newBooking._id,
-          id: newBooking._id,
-          artistName: newBooking.userName,
-          priority: newBooking.priority || 'normal'
-        };
-        setAllBookings(prev => [...prev, mappedBooking]);
-        
-        // Reset form and close modal
-        setFormData({ title: '', description: '', startTime: '', endTime: '' });
-        setShowBookingForm(false);
-        
-        alert('Studio time booked successfully!');
+        if (response.ok) {
+          const updatedBooking = await response.json();
+          // Update the booking in our state
+          const mappedBooking = {
+            ...updatedBooking,
+            _id: updatedBooking._id,
+            id: updatedBooking._id,
+            artistName: updatedBooking.userName,
+            priority: updatedBooking.priority || 'normal'
+          };
+          setAllBookings(prev => 
+            prev.map(booking => 
+              booking._id === editingBooking._id ? mappedBooking : booking
+            )
+          );
+          
+          // Reset form and close modal
+          setFormData({ title: '', description: '', startTime: '', endTime: '' });
+          setEditingBooking(null);
+          setShowBookingForm(false);
+          
+          alert('Event updated successfully!');
+        } else {
+          const error = await response.text();
+          alert(`Failed to update event: ${error}`);
+        }
       } else {
-        const error = await response.text();
-        alert(`Failed to book studio time: ${error}`);
+        // Create new booking
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookingData)
+        });
+
+        if (response.ok) {
+          const newBooking = await response.json();
+          // Add the new booking to our state
+          const mappedBooking = {
+            ...newBooking,
+            _id: newBooking._id,
+            id: newBooking._id,
+            artistName: newBooking.userName,
+            priority: newBooking.priority || 'normal'
+          };
+          setAllBookings(prev => [...prev, mappedBooking]);
+          
+          // Reset form and close modal
+          setFormData({ title: '', description: '', startTime: '', endTime: '' });
+          setShowBookingForm(false);
+          
+          alert('Studio time booked successfully!');
+        } else {
+          const error = await response.text();
+          alert(`Failed to book studio time: ${error}`);
+        }
       }
     } catch (error) {
-      console.error('Error creating booking:', error);
-      alert('Failed to book studio time. Please try again.');
+      console.error('Error saving booking:', error);
+      alert('Failed to save booking. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -212,14 +252,28 @@ const CalendarPage: React.FC = () => {
 
   const handleCreateBooking = () => {
     if (canCreateBooking()) {
+      setEditingBooking(null);
+      setFormData({ title: '', description: '', startTime: '', endTime: '' });
       setShowBookingForm(true);
     }
   };
 
   const handleEditBooking = (booking: BookingSlot) => {
+    console.log('Edit button clicked for booking:', booking);
+    console.log('Can edit booking:', canEditBooking(booking));
     if (canEditBooking(booking)) {
-      // TODO: Implement inline editing
-      console.log('Edit booking:', booking);
+      console.log('Setting editing booking and opening form');
+      setEditingBooking(booking);
+      setFormData({
+        title: booking.title,
+        description: booking.description || '',
+        startTime: booking.startTime,
+        endTime: booking.endTime
+      });
+      setSelectedDate(new Date(booking.date));
+      setShowBookingForm(true);
+    } else {
+      console.log('Cannot edit this booking');
     }
   };
 
@@ -258,116 +312,111 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <CalendarContainer>
-      <Header>
-        <Container>
-          <HeaderContent>
-            <Title>🦎 Studio Calendar</Title>
-            <UserInfo>
-              <RoleDisplay>
-                {state.role === UserRole.ADMIN && '👑 Admin'}
-                {state.role === UserRole.USER && '🎵 User'}
-                {state.role === UserRole.GUEST && '👁️ Guest'}
-              </RoleDisplay>
-              <WelcomeText>Welcome, {state.user?.name}</WelcomeText>
-              <Button variant="secondary" onClick={handleLogout}>
-                Logout
-              </Button>
-            </UserInfo>
-          </HeaderContent>
-        </Container>
-      </Header>
+    <div className="calendar-page">
+      <header className="header">
+        <div className="header-content">
+          <h1 className="title">🦎 Studio Calendar</h1>
+          <div className="user-info">
+            <span className="role-display">
+              {state.role === UserRole.ADMIN && '👑 Admin'}
+              {state.role === UserRole.USER && '🎵 User'}
+              {state.role === UserRole.GUEST && '👁️ Guest'}
+            </span>
+            <span className="welcome-text">Welcome, {state.user?.name}</span>
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <MainContent>
-        <Container>
-          <CalendarGrid>
-            <CalendarCard>
-              <CalendarTitle>Select a Date</CalendarTitle>
-              <StyledCalendar
-                onChange={handleDateChange}
-                value={selectedDate}
-                minDate={new Date()}
-                tileContent={({ date, view }) => {
-                  if (view === 'month') {
-                    const dayBookings = getBookingsForDate(date);
-                    if (dayBookings.length > 0) {
-                      return (
-                        <CalendarDot>
-                          <div className="dot" />
-                          {dayBookings.length > 1 && (
-                            <div className="count">{dayBookings.length}</div>
-                          )}
-                        </CalendarDot>
-                      );
-                    }
-                  }
-                  return null;
-                }}
-              />
-            </CalendarCard>
-
-            <BookingsCard>
-              <BookingsHeader>
-                <h3>{formatDate(selectedDate)}</h3>
-                {canCreateBooking() && (
-                  <Button onClick={handleCreateBooking}>
-                    {state.role === UserRole.ADMIN ? 'Add Event' : 'Book Time'}
-                  </Button>
-                )}
-              </BookingsHeader>
-
-              <BookingsList>
-                {selectedDateBookings.length === 0 ? (
-                  <EmptyState>
-                    {state.role === UserRole.GUEST 
-                      ? 'No events scheduled for this date.'
-                      : 'No bookings for this date. Click "Book Time" to reserve studio time.'
-                    }
-                  </EmptyState>
-                ) : (
-                  selectedDateBookings.map((booking: BookingSlot) => (
-                    <BookingItem key={booking.id}>
-                      <BookingTime>
-                        <TimeRange>
-                          {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                        </TimeRange>
-                        <Duration>
-                          ({calculateDuration(booking.startTime, booking.endTime)})
-                        </Duration>
-                      </BookingTime>
-                      <BookingDetails>
-                        <BookingTitle>{booking.title}</BookingTitle>
-                        <BookingUser>by {booking.userName}</BookingUser>
-                        {booking.description && (
-                          <BookingDescription>{booking.description}</BookingDescription>
+      <main className="main-content">
+        <div className="calendar-grid">
+          <div className="calendar-card">
+            <h3 className="calendar-title">Select a Date</h3>
+            <Calendar
+              className="react-calendar"
+              onChange={handleDateChange}
+              value={selectedDate}
+              minDate={new Date()}
+              tileContent={({ date, view }: { date: Date; view: string }) => {
+                if (view === 'month') {
+                  const dayBookings = getBookingsForDate(date);
+                  if (dayBookings.length > 0) {
+                    return (
+                      <div className="calendar-dot">
+                        <div className="dot" />
+                        {dayBookings.length > 1 && (
+                          <div className="count">{dayBookings.length}</div>
                         )}
-                      </BookingDetails>
-                      {canEditBooking(booking) && (
-                        <BookingActions>
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            onClick={() => handleEditBooking(booking)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="danger" 
-                            size="sm"
-                            onClick={() => handleDeleteBooking(booking.id)}
-                          >
-                            {state.role === UserRole.ADMIN ? 'Delete' : 'Cancel'}
-                          </Button>
-                        </BookingActions>
+                      </div>
+                    );
+                  }
+                }
+                return null;
+              }}
+            />
+          </div>
+
+          <div className="bookings-card">
+            <div className="bookings-header">
+              <h3>{formatDate(selectedDate)}</h3>
+              {canCreateBooking() && (
+                <button className="add-booking-btn" onClick={handleCreateBooking}>
+                  {state.role === UserRole.ADMIN ? 'Add Event' : 'Book Time'}
+                </button>
+              )}
+            </div>
+
+            <div className="bookings-list">
+              {selectedDateBookings.length === 0 ? (
+                <div className="empty-state">
+                  {state.role === UserRole.GUEST 
+                    ? 'No events scheduled for this date.'
+                    : 'No bookings for this date. Click "Book Time" to reserve studio time.'
+                  }
+                </div>
+              ) : (
+                selectedDateBookings.map((booking: BookingSlot) => (
+                  <div key={booking.id} className="booking-item">
+                    <div className="booking-time">
+                      <div className="time-range">
+                        {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                      </div>
+                      <div className="duration">
+                        ({calculateDuration(booking.startTime, booking.endTime)})
+                      </div>
+                    </div>
+                    <div className="booking-details">
+                      <div className="booking-title">{booking.title}</div>
+                      <div className="booking-user">by {booking.userName}</div>
+                      {booking.description && (
+                        <div className="booking-description">{booking.description}</div>
                       )}
-                    </BookingItem>
-                  ))
-                )}
-              </BookingsList>
-            </BookingsCard>
-          </CalendarGrid>
-        </Container>
-      </MainContent>
+                    </div>
+                    {canEditBooking(booking) && (
+                      <div className="booking-actions">
+                        <button 
+                          className="edit-btn"
+                          onClick={() => handleEditBooking(booking)}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="delete-btn"
+                          onClick={() => handleDeleteBooking(booking.id)}
+                        >
+                          {state.role === UserRole.ADMIN ? 'Delete' : 'Cancel'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
 
       {/* Day Detail View Modal */}
       {showDayDetail && (
@@ -377,6 +426,8 @@ const CalendarPage: React.FC = () => {
           onClose={() => setShowDayDetail(false)}
           onBookTimeSlot={() => {
             setShowDayDetail(false);
+            setEditingBooking(null);
+            setFormData({ title: '', description: '', startTime: '', endTime: '' });
             setShowBookingForm(true);
           }}
           userRole={state.role}
@@ -385,14 +436,23 @@ const CalendarPage: React.FC = () => {
 
       {/* Booking Form Modal */}
       {showBookingForm && (
-        <BookingModal>
-          <ModalContent>
-            <ModalHeader>
-              <h3>{state.role === UserRole.ADMIN ? 'Add Studio Event' : 'Book Studio Time'}</h3>
-              <CloseButton onClick={() => setShowBookingForm(false)}>×</CloseButton>
-            </ModalHeader>
-            <BookingForm onSubmit={handleFormSubmit}>
-              <FormGroup>
+        <div className="booking-modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                {editingBooking 
+                  ? 'Edit Studio Event' 
+                  : (state.role === UserRole.ADMIN ? 'Add Studio Event' : 'Book Studio Time')
+                }
+              </h3>
+              <button className="close-button" onClick={() => {
+                setShowBookingForm(false);
+                setEditingBooking(null);
+                setFormData({ title: '', description: '', startTime: '', endTime: '' });
+              }}>×</button>
+            </div>
+            <form className="booking-form" onSubmit={handleFormSubmit}>
+              <div className="form-group">
                 <label htmlFor="title">Event Title</label>
                 <input
                   id="title"
@@ -402,9 +462,9 @@ const CalendarPage: React.FC = () => {
                   placeholder="e.g., Band Practice, Recording Session"
                   required
                 />
-              </FormGroup>
+              </div>
               
-              <FormGroup>
+              <div className="form-group">
                 <label htmlFor="description">Description (optional)</label>
                 <textarea
                   id="description"
@@ -413,10 +473,10 @@ const CalendarPage: React.FC = () => {
                   placeholder="Additional details about your session..."
                   rows={3}
                 />
-              </FormGroup>
+              </div>
               
-              <TimeContainer>
-                <FormGroup>
+              <div className="time-container">
+                <div className="form-group">
                   <label htmlFor="startTime">Start Time</label>
                   <input
                     id="startTime"
@@ -425,9 +485,9 @@ const CalendarPage: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
                     required
                   />
-                </FormGroup>
+                </div>
                 
-                <FormGroup>
+                <div className="form-group">
                   <label htmlFor="endTime">End Time</label>
                   <input
                     id="endTime"
@@ -436,322 +496,34 @@ const CalendarPage: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
                     required
                   />
-                </FormGroup>
-              </TimeContainer>
+                </div>
+              </div>
               
-              <SelectedDateDisplay>
+              <div className="selected-date-display">
                 📅 {formatDate(selectedDate)}
-              </SelectedDateDisplay>
+              </div>
               
-              <FormActions>
-                <Button type="button" variant="secondary" onClick={() => setShowBookingForm(false)}>
+              <div className="form-actions">
+                <button type="button" className="secondary" onClick={() => {
+                  setShowBookingForm(false);
+                  setEditingBooking(null);
+                  setFormData({ title: '', description: '', startTime: '', endTime: '' });
+                }}>
                   Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Booking...' : 'Book Studio Time'}
-                </Button>
-              </FormActions>
-            </BookingForm>
-          </ModalContent>
-        </BookingModal>
+                </button>
+                <button type="submit" className="primary" disabled={isSubmitting}>
+                  {isSubmitting 
+                    ? (editingBooking ? 'Updating...' : 'Booking...') 
+                    : (editingBooking ? 'Update Event' : 'Book Studio Time')
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
-    </CalendarContainer>
+    </div>
   );
 };
-
-const CalendarContainer = styled.div`
-  min-height: 100vh;
-  background-color: ${({ theme }) => theme.colors.background};
-`;
-
-const Header = styled.header`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  padding: ${({ theme }) => theme.spacing.lg} 0;
-`;
-
-const HeaderContent = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 1.8rem;
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
-`;
-
-const RoleDisplay = styled.span`
-  color: ${({ theme }) => theme.colors.primary};
-  font-weight: bold;
-  font-size: 0.9rem;
-`;
-
-const WelcomeText = styled.span`
-  color: ${({ theme }) => theme.colors.text};
-`;
-
-const MainContent = styled.main`
-  padding: ${({ theme }) => theme.spacing.xl} 0;
-`;
-
-const CalendarGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: ${({ theme }) => theme.spacing.xl};
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const CalendarCard = styled(Card)``;
-
-const CalendarTitle = styled.h3`
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  color: ${({ theme }) => theme.colors.text};
-`;
-
-const StyledCalendar = styled(Calendar)`
-  width: 100%;
-  background: white;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  font-family: ${({ theme }) => theme.fonts.primary};
-
-  .react-calendar__tile {
-    position: relative;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    &:hover {
-      background: ${({ theme }) => theme.colors.primary}10;
-    }
-  }
-
-  .react-calendar__tile--active {
-    background: ${({ theme }) => theme.colors.primary};
-    color: white;
-  }
-
-  .react-calendar__tile--now {
-    background: ${({ theme }) => theme.colors.primary}20;
-    color: ${({ theme }) => theme.colors.primary};
-    font-weight: bold;
-  }
-`;
-
-const CalendarDot = styled.div`
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-
-  .dot {
-    width: 6px;
-    height: 6px;
-    background: ${({ theme }) => theme.colors.primary};
-    border-radius: 50%;
-  }
-
-  .count {
-    background: ${({ theme }) => theme.colors.primary};
-    color: white;
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
-    font-weight: bold;
-  }
-`;
-
-const BookingsCard = styled(Card)``;
-
-const BookingsHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-  
-  h3 {
-    color: ${({ theme }) => theme.colors.text};
-  }
-`;
-
-const BookingsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.md};
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  padding: ${({ theme }) => theme.spacing.xl};
-  border: 2px dashed ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-`;
-
-const BookingItem = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.md};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  background-color: ${({ theme }) => theme.colors.surface};
-`;
-
-const BookingTime = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.xs};
-  font-weight: bold;
-  color: ${({ theme }) => theme.colors.primary};
-  min-width: 140px;
-`;
-
-const TimeRange = styled.div`
-  font-size: 0.95rem;
-`;
-
-const Duration = styled.div`
-  font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-weight: normal;
-`;
-
-const BookingDetails = styled.div`
-  flex: 1;
-`;
-
-const BookingTitle = styled.div`
-  font-weight: 500;
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
-
-const BookingUser = styled.div`
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 0.9rem;
-`;
-
-const BookingDescription = styled.div`
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 0.9rem;
-  margin-top: ${({ theme }) => theme.spacing.xs};
-`;
-
-const BookingActions = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.xs};
-`;
-
-const BookingModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: ${({ theme }) => theme.colors.surface};
-  padding: ${({ theme }) => theme.spacing.xl};
-  border-radius: 8px;
-  max-width: 500px;
-  width: 90%;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: ${({ theme }) => theme.colors.textSecondary};
-`;
-
-const BookingForm = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.md};
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.xs};
-
-  label {
-    font-weight: 500;
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 0.9rem;
-  }
-
-  input, textarea {
-    padding: 12px;
-    border: 1px solid ${({ theme }) => theme.colors.border};
-    border-radius: 6px;
-    font-size: 1rem;
-    transition: border-color 0.2s ease;
-
-    &:focus {
-      outline: none;
-      border-color: ${({ theme }) => theme.colors.primary};
-      box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}20;
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
-  }
-`;
-
-const TimeContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: ${({ theme }) => theme.spacing.md};
-`;
-
-const SelectedDateDisplay = styled.div`
-  background: ${({ theme }) => theme.colors.background};
-  padding: ${({ theme }) => theme.spacing.sm};
-  border-radius: 6px;
-  text-align: center;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
-  justify-content: flex-end;
-  margin-top: ${({ theme }) => theme.spacing.lg};
-`;
 
 export default CalendarPage;

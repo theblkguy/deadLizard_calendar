@@ -1,0 +1,448 @@
+// Day detail view mobile optimization
+@import 'variables';
+@import 'mixins';
+
+.day-detail-modal {
+  @include modal-backdrop;
+  @include flex-center;
+  padding: spacing(md);
+  
+  @include mobile {
+    padding: 0;
+    align-items: stretch;
+  }
+  
+  .day-detail-content {
+    background: color(surface);
+    border-radius: 8px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    
+    @include mobile {
+      border-radius: 0;
+      max-height: 100vh;
+      height: 100vh;
+    }
+  }
+  
+  .day-detail-header {
+    @include flex-between;
+    padding: spacing(xl);
+    border-bottom: 1px solid color(border);
+    background: color(surface);
+    
+    @include mobile {
+      padding: spacing(lg);
+      position: sticky;
+      top: 0;
+      z-index: z(header);
+    }
+    
+    .date-info {
+      h2 {
+        margin: 0 0 spacing(xs) 0;
+        color: color(primary);
+        font-size: 1.5rem;
+        
+        @include mobile {
+          font-size: 1.3rem;
+        }
+      }
+      
+      .date-subtitle {
+        color: color(text-secondary);
+        font-size: 0.9rem;
+        
+        @include mobile {
+          font-size: 0.8rem;
+        }
+      }
+    }
+    
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: color(text-secondary);
+      padding: spacing(xs);
+      
+      @include mobile {
+        @include touch-button;
+        font-size: 1.2rem;
+      }
+      
+      &:hover {
+        color: color(text);
+      }
+    }
+  }
+  
+  .day-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: spacing(xl);
+    
+    @include mobile {
+      padding: spacing(lg);
+    }
+  }
+  
+  .stats-section {
+    margin-bottom: spacing(xl);
+    
+    @include mobile {
+      margin-bottom: spacing(lg);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: spacing(md);
+      
+      @include mobile {
+        grid-template-columns: repeat(2, 1fr);
+        gap: spacing(sm);
+      }
+      
+      .stat-card {
+        @include card;
+        text-align: center;
+        padding: spacing(md);
+        
+        @include mobile {
+          padding: spacing(sm);
+        }
+        
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: color(primary);
+          margin-bottom: spacing(xs);
+          
+          @include mobile {
+            font-size: 1.2rem;
+          }
+        }
+        
+        .stat-label {
+          color: color(text-secondary);
+          font-size: 0.8rem;
+          
+          @include mobile {
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+  }
+  
+  .timeline-section {
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: spacing(lg);
+      
+      @include mobile {
+        flex-direction: column;
+        gap: spacing(sm);
+        align-items: stretch;
+        margin-bottom: spacing(md);
+      }
+      
+      h3 {
+        margin: 0;
+        color: color(text);
+        font-size: 1.2rem;
+        
+        @include mobile {
+          font-size: 1.1rem;
+          text-align: center;
+        }
+      }
+      
+      button.primary {
+        @include touch-button;
+        background-color: color(primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: transition(fast);
+        
+        @include mobile {
+          width: 100%;
+          justify-content: center;
+        }
+        
+        &:hover {
+          background-color: darken(color(primary), 10%);
+        }
+      }
+    }
+    
+    .timeline {
+      position: relative;
+      
+      .timeline-hours {
+        position: relative;
+        
+        @include mobile {
+          padding-left: spacing(md);
+        }
+        
+        .hour-slot {
+          position: relative;
+          height: 60px;
+          border-bottom: 1px solid color(border);
+          min-height: 60px;
+          
+          @include mobile {
+            height: 50px;
+            min-height: 50px;
+          }
+          
+          &:first-child {
+            border-top: 1px solid color(border);
+          }
+          
+          .hour-label {
+            position: absolute;
+            left: 0;
+            top: -10px;
+            background: color(surface);
+            padding: 0 spacing(xs);
+            font-size: 0.8rem;
+            color: color(text-secondary);
+            z-index: 1;
+            
+            @include mobile {
+              left: -#{spacing(md)};
+              font-size: 0.7rem;
+              top: -8px;
+            }
+          }
+          
+          .hour-bookings {
+            margin-left: 60px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            
+            @include mobile {
+              margin-left: 0;
+            }
+            
+            .booking-block {
+              position: absolute;
+              left: 0;
+              right: 0;
+              background: color(primary);
+              color: white;
+              border-radius: 4px;
+              padding: spacing(xs);
+              font-size: 0.8rem;
+              overflow: hidden;
+              cursor: pointer;
+              transition: transition(fast);
+              box-sizing: border-box;
+              min-height: 20px;
+              max-height: 60px;
+              
+              @include mobile {
+                font-size: 0.7rem;
+                padding: spacing(xs) spacing(sm);
+                border-radius: 3px;
+                max-height: 50px;
+                min-height: 18px;
+              }
+              
+              &:hover {
+                background: darken(color(primary), 10%);
+                transform: translateX(2px);
+                z-index: 2;
+              }
+              
+              .booking-title {
+                font-weight: 500;
+                @include text-ellipsis;
+                line-height: 1.2;
+                
+                @include mobile {
+                  font-size: 0.75rem;
+                }
+              }
+              
+              .booking-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: spacing(xs);
+                
+                .booking-title {
+                  flex: 1;
+                  margin: 0;
+                }
+                
+                .booking-export-btn {
+                  background: rgba(255, 255, 255, 0.2);
+                  border: none;
+                  border-radius: 3px;
+                  color: white;
+                  cursor: pointer;
+                  font-size: 0.7rem;
+                  padding: 2px 4px;
+                  transition: transition(fast);
+                  flex-shrink: 0;
+                  
+                  @include mobile {
+                    font-size: 0.65rem;
+                    padding: 1px 3px;
+                  }
+                  
+                  &:hover {
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: scale(1.1);
+                  }
+                }
+              }
+              
+              .booking-time {
+                font-size: 0.7rem;
+                opacity: 0.9;
+                margin-top: 2px;
+                
+                @include mobile {
+                  font-size: 0.65rem;
+                  margin-top: 1px;
+                }
+              }
+              
+              &.booking-continuation {
+                background: color(primary-light);
+                border-left: 3px solid color(primary);
+                padding-left: spacing(xs);
+                
+                @include mobile {
+                  border-left-width: 2px;
+                }
+                
+                .booking-continuation-label {
+                  font-size: 0.7rem;
+                  opacity: 0.9;
+                  font-style: italic;
+                  @include text-ellipsis;
+                  
+                  @include mobile {
+                    font-size: 0.65rem;
+                  }
+                }
+                
+                &:hover {
+                  background: lighten(color(primary-light), 5%);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    .empty-timeline {
+      text-align: center;
+      color: color(text-secondary);
+      padding: spacing(xl);
+      border: 2px dashed color(border);
+      border-radius: 8px;
+      
+      @include mobile {
+        padding: spacing(lg);
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  .day-detail-actions {
+    padding: spacing(xl);
+    border-top: 1px solid color(border);
+    
+    @include mobile {
+      padding: spacing(lg);
+      position: sticky;
+      bottom: 0;
+      background: color(surface);
+    }
+    
+    .action-buttons {
+      @include flex-center;
+      gap: spacing(md);
+      margin-bottom: spacing(sm);
+      
+      @include mobile {
+        flex-direction: column;
+        gap: spacing(sm);
+      }
+    }
+    
+    button {
+      @include touch-button;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: transition(fast);
+      
+      @include mobile {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      &.primary {
+        background-color: color(primary);
+        color: white;
+        
+        @include mobile {
+          order: -1; // Put primary button first on mobile
+        }
+        
+        &:hover {
+          background-color: darken(color(primary), 10%);
+        }
+      }
+      
+      &.secondary {
+        background-color: transparent;
+        color: color(text-secondary);
+        border: 1px solid color(border);
+        
+        &:hover {
+          background-color: color(background);
+        }
+      }
+      
+      &.google-calendar-btn {
+        background-color: #4285f4;
+        color: white;
+        font-size: 0.85rem;
+        
+        &:hover {
+          background-color: #3367d6;
+        }
+        
+        &:not(.primary) {
+          background-color: #34a853;
+          
+          &:hover {
+            background-color: #137333;
+          }
+        }
+      }
+    }
+  }
+}

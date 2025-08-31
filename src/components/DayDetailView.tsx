@@ -1,6 +1,6 @@
 import React from 'react';
-import styled from 'styled-components';
 import { BookingSlot, UserRole } from '../types';
+import { addToGoogleCalendar, downloadICSFile, downloadMultipleICSFile } from '../utils/googleCalendar';
 
 interface DayDetailViewProps {
   date: Date;
@@ -55,344 +55,186 @@ const DayDetailView: React.FC<DayDetailViewProps> = ({
   );
 
   return (
-    <Overlay onClick={onClose}>
-      <DetailModal onClick={(e) => e.stopPropagation()}>
-        <Header>
-          <DateTitle>{formatDate(date)}</DateTitle>
-          <CloseButton onClick={onClose}>&times;</CloseButton>
-        </Header>
+    <div className="day-detail-modal" onClick={onClose}>
+      <div className="day-detail-content" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <div className="day-detail-header">
+          <div className="date-info">
+            <h2>{formatDate(date)}</h2>
+          </div>
+          <button className="close-button" onClick={onClose}>&times;</button>
+        </div>
         
-        <BookingsSummary>
-          <SummaryStats>
-            <StatItem>
-              <StatNumber>{bookings.length}</StatNumber>
-              <StatLabel>Total Bookings</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatNumber>
-                {bookings.reduce((total, booking) => {
-                  const start = new Date(`2000-01-01T${booking.startTime}`);
-                  const end = new Date(`2000-01-01T${booking.endTime}`);
-                  return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-                }, 0).toFixed(1)}h
-              </StatNumber>
-              <StatLabel>Total Studio Time</StatLabel>
-            </StatItem>
-          </SummaryStats>
-        </BookingsSummary>
+        <div className="day-detail-body">
+          <div className="stats-section">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-value">{bookings.length}</div>
+                <div className="stat-label">Total Bookings</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  {bookings.reduce((total, booking) => {
+                    const start = new Date(`2000-01-01T${booking.startTime}`);
+                    const end = new Date(`2000-01-01T${booking.endTime}`);
+                    return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                  }, 0).toFixed(1)}h
+                </div>
+                <div className="stat-label">Total Studio Time</div>
+              </div>
+            </div>
+          </div>
 
-        <BookingsContainer>
-          <SectionHeader>
-            <SectionTitle>Schedule for Today</SectionTitle>
-            {(userRole === UserRole.ADMIN || userRole === UserRole.USER) && (
-              <BookTimeButton onClick={onBookTimeSlot}>
-                + Book Time Slot
-              </BookTimeButton>
+          <div className="timeline-section">
+            <div className="section-header">
+              <h3>Schedule for Today</h3>
+              {(userRole === UserRole.ADMIN || userRole === UserRole.USER) && (
+                <button className="primary" onClick={onBookTimeSlot}>
+                  + Book Time Slot
+                </button>
+              )}
+            </div>
+
+            {sortedBookings.length === 0 ? (
+              <div className="empty-timeline">
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                  No bookings scheduled
+                </div>
+                <div style={{ color: '#666', fontSize: '0.9rem' }}>
+                  {userRole === UserRole.GUEST 
+                    ? 'The studio is available all day!'
+                    : 'Click "Book Time Slot" to schedule studio time.'
+                  }
+                </div>
+              </div>
+            ) : (
+              <div className="timeline">
+                <div className="timeline-hours">
+                  {Array.from({ length: 24 }, (_, hour) => {
+                    // Get bookings that overlap with this hour
+                    const hourBookings = sortedBookings.filter(booking => {
+                      const startHour = parseInt(booking.startTime.split(':')[0]);
+                      const endHour = parseInt(booking.endTime.split(':')[0]);
+                      const endMinute = parseInt(booking.endTime.split(':')[1]);
+                      
+                      // Include booking if it starts in this hour, or spans through this hour
+                      return startHour <= hour && (endHour > hour || (endHour === hour && endMinute > 0));
+                    });
+
+                    return (
+                      <div key={hour} className="hour-slot">
+                        <div className="hour-label">
+                          {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
+                        </div>
+                        <div className="hour-bookings">
+                          {hourBookings.map((booking) => {
+                            const startHour = parseInt(booking.startTime.split(':')[0]);
+                            const startMinute = parseInt(booking.startTime.split(':')[1]);
+                            const endHour = parseInt(booking.endTime.split(':')[0]);
+                            const endMinute = parseInt(booking.endTime.split(':')[1]);
+                            
+                            // Calculate position and height for this specific hour
+                            let startPosition = 0;
+                            let endPosition = 60;
+                            
+                            if (startHour === hour) {
+                              // Booking starts in this hour
+                              startPosition = (startMinute / 60) * 60;
+                            }
+                            
+                            if (endHour === hour) {
+                              // Booking ends in this hour
+                              endPosition = (endMinute / 60) * 60;
+                            } else if (endHour > hour) {
+                              // Booking continues past this hour
+                              endPosition = 60;
+                            }
+                            
+                            const height = endPosition - startPosition;
+                            
+                            // Only show the booking details in the hour it starts
+                            const showDetails = startHour === hour;
+                            
+                            return (
+                              <div
+                                key={`${booking._id}-${hour}`}
+                                className={`booking-block ${!showDetails ? 'booking-continuation' : ''}`}
+                                style={{
+                                  top: `${startPosition}px`,
+                                  height: `${Math.max(height, 5)}px`
+                                }}
+                              >
+                                {showDetails && (
+                                  <>
+                                    <div className="booking-header">
+                                      <div className="booking-title">{booking.title}</div>
+                                      <button 
+                                        className="booking-export-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addToGoogleCalendar(booking);
+                                        }}
+                                        title="Add to Google Calendar"
+                                      >
+                                        📆
+                                      </button>
+                                    </div>
+                                    <div className="booking-time">
+                                      {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                                    </div>
+                                  </>
+                                )}
+                                {!showDetails && (
+                                  <div className="booking-continuation-label">
+                                    {booking.title} (continues)
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-          </SectionHeader>
+          </div>
+        </div>
 
-          {sortedBookings.length === 0 ? (
-            <EmptyState>
-              <EmptyIcon>📅</EmptyIcon>
-              <EmptyTitle>No bookings scheduled</EmptyTitle>
-              <EmptyMessage>
-                {userRole === UserRole.GUEST 
-                  ? 'The studio is available all day!'
-                  : 'Click "Book Time Slot" to schedule studio time.'
-                }
-              </EmptyMessage>
-            </EmptyState>
-          ) : (
-            <BookingsList>
-              {sortedBookings.map((booking) => (
-                <BookingCard key={booking._id} priority={booking.priority || 'normal'}>
-                  <BookingTime>
-                    <TimeRange>
-                      {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                    </TimeRange>
-                    <Duration>
-                      {calculateDuration(booking.startTime, booking.endTime)}
-                    </Duration>
-                  </BookingTime>
-                  
-                  <BookingContent>
-                    <BookingTitle>{booking.title}</BookingTitle>
-                    {booking.description && (
-                      <BookingDescription>{booking.description}</BookingDescription>
-                    )}
-                    <BookingMeta>
-                      <MetaItem>
-                        <MetaLabel>Artist:</MetaLabel>
-                        <MetaValue>{booking.artistName}</MetaValue>
-                      </MetaItem>
-                      {booking.priority && booking.priority !== 'normal' && (
-                        <PriorityBadge priority={booking.priority}>
-                          {booking.priority.toUpperCase()}
-                        </PriorityBadge>
-                      )}
-                    </BookingMeta>
-                  </BookingContent>
-                </BookingCard>
-              ))}
-            </BookingsList>
-          )}
-        </BookingsContainer>
-
-        <StudioHours>
-          <small>🎵 Studio Hours: Open 24/7 for your creative needs</small>
-        </StudioHours>
-      </DetailModal>
-    </Overlay>
+        <div className="day-detail-actions">
+          <div className="action-buttons">
+            <button className="secondary" onClick={onClose}>
+              Close
+            </button>
+            {bookings.length > 0 && (
+              <>
+                <button 
+                  className="google-calendar-btn"
+                  onClick={() => downloadMultipleICSFile(bookings, `studio-${date.toISOString().split('T')[0]}`)}
+                  title="Download .ics file for all bookings"
+                >
+                  📅 Export Day (.ics)
+                </button>
+                {bookings.length === 1 && (
+                  <button 
+                    className="google-calendar-btn primary"
+                    onClick={() => addToGoogleCalendar(bookings[0])}
+                    title="Add to Google Calendar"
+                  >
+                    📆 Add to Google Calendar
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+            🎵 Studio Hours: Open 24/7 for your creative needs
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-`;
-
-const DetailModal = styled.div`
-  background: white;
-  border-radius: 16px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid #f0f0f0;
-`;
-
-const DateTitle = styled.h2`
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #95a5a6;
-  padding: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #f8f9fa;
-    color: #2c3e50;
-  }
-`;
-
-const BookingsSummary = styled.div`
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-`;
-
-const SummaryStats = styled.div`
-  display: flex;
-  gap: 32px;
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const StatNumber = styled.div`
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin-bottom: 4px;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.85rem;
-  opacity: 0.9;
-`;
-
-const BookingsContainer = styled.div`
-  padding: 24px;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-`;
-
-const SectionTitle = styled.h3`
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const BookTimeButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 40px 20px;
-  color: #7f8c8d;
-`;
-
-const EmptyIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 16px;
-`;
-
-const EmptyTitle = styled.div`
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #2c3e50;
-`;
-
-const EmptyMessage = styled.div`
-  font-size: 0.95rem;
-  line-height: 1.5;
-`;
-
-const BookingsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const BookingCard = styled.div<{ priority: string }>`
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 16px;
-  background: white;
-  transition: all 0.2s ease;
-  border-left: 4px solid ${props => 
-    props.priority === 'high' ? '#e74c3c' :
-    props.priority === 'medium' ? '#f39c12' : '#3498db'
-  };
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-  }
-`;
-
-const BookingTime = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-`;
-
-const TimeRange = styled.div`
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #2c3e50;
-`;
-
-const Duration = styled.div`
-  background: #f8f9fa;
-  color: #6c757d;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-`;
-
-const BookingContent = styled.div``;
-
-const BookingTitle = styled.div`
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: #2c3e50;
-  margin-bottom: 6px;
-`;
-
-const BookingDescription = styled.div`
-  color: #6c757d;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin-bottom: 10px;
-`;
-
-const BookingMeta = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const MetaItem = styled.div`
-  display: flex;
-  gap: 4px;
-  font-size: 0.85rem;
-`;
-
-const MetaLabel = styled.span`
-  color: #6c757d;
-`;
-
-const MetaValue = styled.span`
-  color: #2c3e50;
-  font-weight: 500;
-`;
-
-const PriorityBadge = styled.span<{ priority: string }>`
-  background: ${props => 
-    props.priority === 'high' ? '#e74c3c' :
-    props.priority === 'medium' ? '#f39c12' : '#3498db'
-  };
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-`;
-
-const StudioHours = styled.div`
-  padding: 16px 24px;
-  background: #f8f9fa;
-  border-radius: 0 0 16px 16px;
-  text-align: center;
-  color: #6c757d;
-`;
 
 export default DayDetailView;
