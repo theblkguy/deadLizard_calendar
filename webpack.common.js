@@ -43,7 +43,7 @@ module.exports = {
           {
             loader: 'sass-loader',
             options: {
-              api: 'modern-compiler' // Use modern Sass API
+              api: 'modern' // Use modern Sass API
             }
           }
         ]
