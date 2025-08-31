@@ -131,7 +131,7 @@ jobs:
           ls -lh *.tar.gz
 
       - name: 📤 Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-package
           path: dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz
@@ -144,14 +144,14 @@ jobs:
     if: needs.check-changes.outputs.should-deploy == 'true'
     environment: 
       name: ${{ github.event.inputs.environment || 'production' }}
-      url: ${{ vars.DEPLOYMENT_URL }}
+      url: https://deadlizardjam.online
 
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
       - name: 📥 Download Build Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deployment-package
 
@@ -230,9 +230,9 @@ jobs:
             echo "🏥 Performing health check..."
             sleep 10
             if curl -f http://localhost:5000/api/health 2>/dev/null; then
-              echo "✅ Deployment successful!"
+              echo "✅ Local health check successful!"
             else
-              echo "❌ Health check failed!"
+              echo "❌ Local health check failed!"
               exit 1
             fi
             
@@ -252,9 +252,11 @@ jobs:
           echo "🏥 Running post-deployment health checks..."
           sleep 15
           
-          # Check if the application is responding
-          if curl -f "http://${{ secrets.AWS_HOST }}:5000/api/health" 2>/dev/null; then
-            echo "✅ Application is healthy!"
+          # Check if the application is responding via HTTPS
+          if curl -f "https://deadlizardjam.online/api/health" 2>/dev/null; then
+            echo "✅ HTTPS Application is healthy!"
+          elif curl -f "http://${{ secrets.AWS_HOST }}:5000/api/health" 2>/dev/null; then
+            echo "✅ HTTP Application is healthy (SSL setup may be pending)!"
           else
             echo "❌ Application health check failed!"
             exit 1
