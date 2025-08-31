@@ -1,0 +1,305 @@
+name: 🚀 Deploy Dead Lizard Calendar
+
+on:
+  # Trigger deployment every 30 minutes
+  schedule:
+    - cron: '*/30 * * * *'
+  
+  # Allow manual deployment
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: false
+        type: boolean
+
+  # Deploy on push to deployment-branch
+  push:
+    branches: [ deployment-branch, main ]
+
+env:
+  NODE_VERSION: '18'
+  AWS_REGION: 'us-east-1'  # Change to your AWS region
+
+jobs:
+  check-changes:
+    name: 📊 Check for Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+      commit-sha: ${{ steps.check.outputs.commit-sha }}
+    steps:
+      - name: 📦 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🔍 Check for Changes
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "🔄 Force deployment requested"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "🔄 Push triggered deployment"
+          else
+            # Check if there are changes in the last 30 minutes
+            CHANGES=$(git log --since="30 minutes ago" --oneline | wc -l)
+            if [ $CHANGES -gt 0 ]; then
+              echo "should-deploy=true" >> $GITHUB_OUTPUT
+              echo "✅ Found $CHANGES commits in the last 30 minutes"
+            else
+              echo "should-deploy=false" >> $GITHUB_OUTPUT
+              echo "⏭️ No changes detected in the last 30 minutes"
+            fi
+          fi
+          echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    name: 🏗️ Build & Test
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.should-deploy == 'true'
+    
+    steps:
+      - name: 📦 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📋 Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+            server/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 📥 Install Dependencies
+        run: |
+          echo "🔧 Installing root dependencies..."
+          npm ci
+          echo "🔧 Installing server dependencies..."
+          cd server && npm ci
+
+      - name: 🔍 Type Check
+        run: npm run type-check
+
+      - name: 🏗️ Build Application
+        run: |
+          echo "🏗️ Building client..."
+          npm run build
+          echo "🏗️ Building server..."
+          npm run build:server
+
+      - name: 📦 Create Deployment Archive
+        run: |
+          echo "📦 Creating deployment package..."
+          mkdir -p deployment-package
+          
+          # Copy built files
+          cp -r public deployment-package/
+          cp -r server/dist deployment-package/server
+          cp server/package*.json deployment-package/server/
+          
+          # Copy configuration files
+          cp package*.json deployment-package/
+          cp ecosystem.config.json deployment-package/
+          cp deploy.sh deployment-package/
+          
+          # Create archive
+          tar -czf dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz -C deployment-package .
+          
+          echo "📊 Deployment package size:"
+          ls -lh *.tar.gz
+
+      - name: 📤 Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-package
+          path: dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz
+          retention-days: 30
+
+  deploy:
+    name: 🚀 Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: [check-changes, build-and-test]
+    if: needs.check-changes.outputs.should-deploy == 'true'
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ vars.DEPLOYMENT_URL }}
+
+    steps:
+      - name: 📦 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: deployment-package
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🔑 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/aws-key.pem
+          chmod 600 ~/.ssh/aws-key.pem
+          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📤 Upload to AWS Instance
+        run: |
+          echo "📤 Uploading deployment package to AWS..."
+          scp -i ~/.ssh/aws-key.pem \
+            dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz \
+            ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }}:/tmp/
+
+      - name: 🚀 Deploy Application
+        run: |
+          echo "🚀 Deploying application on AWS instance..."
+          ssh -i ~/.ssh/aws-key.pem ${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }} << 'EOF'
+            set -e
+            
+            # Configuration
+            APP_DIR="/opt/deadlizard-calendar"
+            BACKUP_DIR="/opt/deadlizard-calendar-backups"
+            SERVICE_NAME="deadlizard-calendar"
+            
+            echo "🔄 Starting deployment process..."
+            
+            # Create backup of current deployment
+            if [ -d "$APP_DIR" ]; then
+              echo "📦 Creating backup..."
+              sudo mkdir -p $BACKUP_DIR
+              sudo cp -r $APP_DIR $BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S)
+            fi
+            
+            # Stop the application
+            echo "⏹️ Stopping application..."
+            sudo systemctl stop $SERVICE_NAME || true
+            sudo pkill -f "node.*server" || true
+            
+            # Extract new deployment
+            echo "📂 Extracting new deployment..."
+            sudo mkdir -p $APP_DIR
+            cd /tmp
+            sudo tar -xzf dead-lizard-calendar-*.tar.gz -C $APP_DIR
+            
+            # Install dependencies
+            echo "📥 Installing production dependencies..."
+            cd $APP_DIR/server
+            sudo npm ci --only=production
+            
+            # Set permissions
+            sudo chown -R $USER:$USER $APP_DIR
+            sudo chmod +x $APP_DIR/deploy.sh
+            
+            # Start the application
+            echo "▶️ Starting application..."
+            sudo systemctl start $SERVICE_NAME || {
+              echo "🔄 Service not found, starting with PM2..."
+              cd $APP_DIR/server
+              pm2 stop deadlizard-calendar || true
+              pm2 start dist/server.js --name deadlizard-calendar
+              pm2 save
+            }
+            
+            # Health check
+            echo "🏥 Performing health check..."
+            sleep 10
+            if curl -f http://localhost:5000/api/health 2>/dev/null; then
+              echo "✅ Deployment successful!"
+            else
+              echo "❌ Health check failed!"
+              exit 1
+            fi
+            
+            # Cleanup
+            echo "🧹 Cleaning up..."
+            rm -f /tmp/dead-lizard-calendar-*.tar.gz
+            
+            # Keep only last 5 backups
+            cd $BACKUP_DIR
+            ls -t | tail -n +6 | sudo xargs rm -rf
+            
+            echo "🎵 Dead Lizard Calendar deployment completed!"
+          EOF
+
+      - name: 🏥 Post-Deployment Health Check
+        run: |
+          echo "🏥 Running post-deployment health checks..."
+          sleep 15
+          
+          # Check if the application is responding
+          if curl -f "http://${{ secrets.AWS_HOST }}:5000/api/health" 2>/dev/null; then
+            echo "✅ Application is healthy!"
+          else
+            echo "❌ Application health check failed!"
+            exit 1
+          fi
+
+      - name: 📢 Deployment Notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Deployment successful! 🎵"
+            echo "🔗 Application URL: http://${{ secrets.AWS_HOST }}"
+            echo "📝 Commit: ${{ needs.check-changes.outputs.commit-sha }}"
+          else
+            echo "❌ Deployment failed!"
+          fi
+
+  cleanup:
+    name: 🧹 Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    
+    steps:
+      - name: 🧹 Remove Old Artifacts
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            
+            // Keep artifacts for 7 days, then clean up
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            for (const artifact of artifacts.data.artifacts) {
+              const createdAt = new Date(artifact.created_at);
+              if (createdAt < sevenDaysAgo) {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                console.log(`Deleted old artifact: ${artifact.name}`);
+              }
+            }

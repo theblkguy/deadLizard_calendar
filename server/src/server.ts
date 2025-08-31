@@ -65,11 +65,23 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname, '../../dist')));
 }
 
-// Routes
-app.use('/api/access', accessRoutes);
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/access', accessRoutes);
+
+// Health check endpoint for deployment monitoring
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -1,0 +1,35 @@
+[Unit]
+Description=Dead Lizard Calendar - Studio Booking Application
+Documentation=https://github.com/theblkguy/deadLizard_calendar
+After=network.target mongod.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/deadlizard-calendar/server
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=deadlizard-calendar
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/deadlizard-calendar
+ProtectHome=true
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=512M
+
+[Install]
+WantedBy=multi-user.target
