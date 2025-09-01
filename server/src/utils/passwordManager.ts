@@ -50,6 +50,14 @@ export class AccessCodeManager {
   private static guestCodePlain: string | null = null;
   private static userCodePlain: string | null = null;
   private static adminCodePlain: string | null = null;
+  private static initialized: boolean = false;
+
+  /**
+   * Check if access codes have been properly initialized
+   */
+  static isInitialized(): boolean {
+    return this.initialized;
+  }
 
   /**
    * Initialize access codes from environment variables
@@ -70,9 +78,11 @@ export class AccessCodeManager {
     if ((!this.guestCodeHash && !this.guestCodePlain) ||
         (!this.userCodeHash && !this.userCodePlain) ||
         (!this.adminCodeHash && !this.adminCodePlain)) {
+      this.initialized = false;
       throw new Error('All access codes must be set in environment variables (either plain or hashed)');
     }
 
+    this.initialized = true;
     console.log('🔐 Access codes initialized successfully');
     if (this.guestCodeHash || this.userCodeHash || this.adminCodeHash) {
       console.log('🔒 Using bcrypt hashed passwords for enhanced security');

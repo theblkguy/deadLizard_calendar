@@ -17,13 +17,34 @@ const accessCodeLimiter = rateLimit({
 });
 
 // Initialize access codes
-AccessCodeManager.initialize();
+try {
+  AccessCodeManager.initialize();
+} catch (error) {
+  console.error('❌ Failed to initialize access codes:', error);
+  console.error('Environment check:', {
+    GUEST_ACCESS_CODE: process.env.GUEST_ACCESS_CODE ? `Set (${process.env.GUEST_ACCESS_CODE.length} chars)` : 'Not set',
+    USER_ACCESS_CODE: process.env.USER_ACCESS_CODE ? `Set (${process.env.USER_ACCESS_CODE.length} chars)` : 'Not set',
+    ADMIN_ACCESS_CODE: process.env.ADMIN_ACCESS_CODE ? `Set (${process.env.ADMIN_ACCESS_CODE.length} chars)` : 'Not set',
+    GUEST_ACCESS_CODE_HASH: process.env.GUEST_ACCESS_CODE_HASH ? 'Set' : 'Not set',
+    USER_ACCESS_CODE_HASH: process.env.USER_ACCESS_CODE_HASH ? 'Set' : 'Not set',
+    ADMIN_ACCESS_CODE_HASH: process.env.ADMIN_ACCESS_CODE_HASH ? 'Set' : 'Not set'
+  });
+}
 
 // Verify access code route
 router.post('/verify-access', accessCodeLimiter, async (req, res) => {
   try {
     const { accessCode } = req.body;
     const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+
+    // Check if access codes are properly initialized
+    if (!AccessCodeManager.isInitialized()) {
+      console.error('❌ Access codes not initialized - check environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication system not properly configured'
+      });
+    }
 
     // Check if IP is rate limited
     if (AccessRateLimit.isRateLimited(clientIP)) {

@@ -137,6 +137,12 @@ jobs:
             echo "USER_ACCESS_CODE=${{ secrets.USER_ACCESS_CODE }}" | sudo tee -a server/.env > /dev/null
             echo "ADMIN_ACCESS_CODE=${{ secrets.ADMIN_ACCESS_CODE }}" | sudo tee -a server/.env > /dev/null
             
+            # Debug environment variables (without exposing values)
+            echo "🔍 Checking environment variables..."
+            echo "GUEST_ACCESS_CODE length: $(echo -n "${{ secrets.GUEST_ACCESS_CODE }}" | wc -c)"
+            echo "USER_ACCESS_CODE length: $(echo -n "${{ secrets.USER_ACCESS_CODE }}" | wc -c)"
+            echo "ADMIN_ACCESS_CODE length: $(echo -n "${{ secrets.ADMIN_ACCESS_CODE }}" | wc -c)"
+            
             sudo chmod 600 server/.env
             sudo chown ubuntu:ubuntu server/.env
             
