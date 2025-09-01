@@ -84,11 +84,33 @@ app.get('/api/health', (req, res) => {
 });
 
 // Health check endpoint
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV,
+    uptime: process.uptime(),
+    memory: {
+      rss: process.memoryUsage().rss,
+      heapTotal: process.memoryUsage().heapTotal,
+      heapUsed: process.memoryUsage().heapUsed
+    },
     service: 'Dead Lizard Calendar API'
+  });
+});
+
+// Debug endpoint to check environment variables (temporary)
+app.get('/api/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '***SET***' : 'NOT_SET',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '***SET***' : 'NOT_SET',
+    MONGODB_URI: process.env.MONGODB_URI ? '***SET***' : 'NOT_SET',
+    JWT_SECRET: process.env.JWT_SECRET ? '***SET***' : 'NOT_SET',
+    SESSION_SECRET: process.env.SESSION_SECRET ? '***SET***' : 'NOT_SET'
   });
 });
 
