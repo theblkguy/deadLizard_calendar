@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User';
 
 const router = express.Router();
@@ -22,10 +23,24 @@ router.get('/google/callback',
   }),
   async (req, res) => {
     try {
+      console.log('🔍 Google OAuth callback initiated');
       const user = req.user as any;
       
+      if (!user) {
+        console.error('❌ No user data received from Google OAuth');
+        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
+        return res.redirect(`${frontendURL}/auth/callback?error=no_user_data`);
+      }
+
+      console.log('🔍 User data from Google:', {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      });
+
       // Get the role from session (passed from initial OAuth request)
       const pendingRole = (req.session as any)?.pendingRole || 'guest';
+      console.log('🔍 Pending role from session:', pendingRole);
       
       // Map role strings to enum values (lowercase for database)
       const roleMap: { [key: string]: 'guest' | 'user' | 'admin' } = {
@@ -35,6 +50,7 @@ router.get('/google/callback',
       };
       
       const finalRole = roleMap[pendingRole] || 'guest';
+      console.log('🔍 Final role assigned:', finalRole);
       
       // Clean up the name by removing special characters and emojis
       const cleanName = user.name
@@ -42,6 +58,28 @@ router.get('/google/callback',
         .replace(/[^\w\s.-]/g, '') // Remove non-alphanumeric characters except spaces, dots, hyphens
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
+
+      console.log('🔍 Cleaned name:', cleanName);
+
+      // Check database connection before trying to query
+      if (mongoose.connection.readyState !== 1) {
+        console.error('❌ Database not connected, creating temporary token');
+        // Create a temporary JWT token without database interaction
+        const tempToken = jwt.sign(
+          { 
+            userId: `temp_${user.id}`,
+            email: user.email, 
+            name: cleanName,
+            picture: user.picture,
+            role: finalRole
+          },
+          process.env.JWT_SECRET || 'deadlizard-jwt-secret',
+          { expiresIn: '24h' }
+        );
+        
+        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
+        return res.redirect(`${frontendURL}/auth/callback?token=${tempToken}&temp=true`);
+      }
 
       // Find or create user in database
       // First try to find by Google ID, then by email
