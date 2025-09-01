@@ -22,8 +22,13 @@ const LoginPage: React.FC = () => {
     // Store the user's role in sessionStorage so we can assign it after OAuth
     sessionStorage.setItem('pendingUserRole', role || 'guest');
     
+    // Use environment-aware URL for Google OAuth
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin  // Use current domain in production
+      : 'http://localhost:5000'; // Use localhost for development
+    
     // Redirect to the backend Google OAuth endpoint
-    window.location.href = `http://localhost:5000/api/auth/google?role=${role}`;
+    window.location.href = `${baseUrl}/api/auth/google?role=${role}`;
   };
 
   const handleBackToHome = () => {
