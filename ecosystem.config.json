@@ -4,6 +4,7 @@
       "name": "deadlizard-calendar",
       "script": "server/dist/server.js",
       "cwd": "/opt/deadlizard-calendar",
+      "env_file": "/opt/deadlizard-calendar/.env",
       "env": {
         "NODE_ENV": "development"
       },
