@@ -29,6 +29,8 @@ try {
     USER_ACCESS_CODE_HASH: process.env.USER_ACCESS_CODE_HASH ? 'Set' : 'Not set',
     ADMIN_ACCESS_CODE_HASH: process.env.ADMIN_ACCESS_CODE_HASH ? 'Set' : 'Not set'
   });
+  // Don't crash the server - just log the error
+  console.error('⚠️  Access code system will be disabled until this is fixed');
 }
 
 // Verify access code route
@@ -106,6 +108,23 @@ router.get('/access-levels', (req, res) => {
       user: 'Book and manage your own studio sessions',
       admin: 'Full access to manage all bookings and users'
     }
+  });
+});
+
+// Diagnostic endpoint for debugging environment issues
+router.get('/diagnostic', (req, res) => {
+  res.json({
+    initialized: AccessCodeManager.isInitialized(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      GUEST_ACCESS_CODE: process.env.GUEST_ACCESS_CODE ? `Set (${process.env.GUEST_ACCESS_CODE.length} chars)` : 'Not set',
+      USER_ACCESS_CODE: process.env.USER_ACCESS_CODE ? `Set (${process.env.USER_ACCESS_CODE.length} chars)` : 'Not set',
+      ADMIN_ACCESS_CODE: process.env.ADMIN_ACCESS_CODE ? `Set (${process.env.ADMIN_ACCESS_CODE.length} chars)` : 'Not set',
+      GUEST_ACCESS_CODE_HASH: process.env.GUEST_ACCESS_CODE_HASH ? 'Set' : 'Not set',
+      USER_ACCESS_CODE_HASH: process.env.USER_ACCESS_CODE_HASH ? 'Set' : 'Not set',
+      ADMIN_ACCESS_CODE_HASH: process.env.ADMIN_ACCESS_CODE_HASH ? 'Set' : 'Not set'
+    },
+    timestamp: new Date().toISOString()
   });
 });
 

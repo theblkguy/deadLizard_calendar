@@ -64,31 +64,49 @@ export class AccessCodeManager {
    * Supports both plaintext codes and pre-hashed codes
    */
   static initialize(): void {
-    // Load hashed versions (if available)
-    this.guestCodeHash = process.env.GUEST_ACCESS_CODE_HASH || null;
-    this.userCodeHash = process.env.USER_ACCESS_CODE_HASH || null;
-    this.adminCodeHash = process.env.ADMIN_ACCESS_CODE_HASH || null;
+    try {
+      // Load hashed versions (if available)
+      this.guestCodeHash = process.env.GUEST_ACCESS_CODE_HASH || null;
+      this.userCodeHash = process.env.USER_ACCESS_CODE_HASH || null;
+      this.adminCodeHash = process.env.ADMIN_ACCESS_CODE_HASH || null;
 
-    // Load plaintext versions (if available)
-    this.guestCodePlain = process.env.GUEST_ACCESS_CODE || null;
-    this.userCodePlain = process.env.USER_ACCESS_CODE || null;
-    this.adminCodePlain = process.env.ADMIN_ACCESS_CODE || null;
+      // Load plaintext versions (if available)
+      this.guestCodePlain = process.env.GUEST_ACCESS_CODE || null;
+      this.userCodePlain = process.env.USER_ACCESS_CODE || null;
+      this.adminCodePlain = process.env.ADMIN_ACCESS_CODE || null;
 
-    // Validate that at least one method is configured for each role
-    if ((!this.guestCodeHash && !this.guestCodePlain) ||
-        (!this.userCodeHash && !this.userCodePlain) ||
-        (!this.adminCodeHash && !this.adminCodePlain)) {
+      // Debug environment variables (without exposing values)
+      console.log('🔍 Environment variables check:', {
+        GUEST_ACCESS_CODE: this.guestCodePlain ? `Set (${this.guestCodePlain.length} chars)` : 'Not set',
+        USER_ACCESS_CODE: this.userCodePlain ? `Set (${this.userCodePlain.length} chars)` : 'Not set',
+        ADMIN_ACCESS_CODE: this.adminCodePlain ? `Set (${this.adminCodePlain.length} chars)` : 'Not set',
+        GUEST_ACCESS_CODE_HASH: this.guestCodeHash ? 'Set' : 'Not set',
+        USER_ACCESS_CODE_HASH: this.userCodeHash ? 'Set' : 'Not set',
+        ADMIN_ACCESS_CODE_HASH: this.adminCodeHash ? 'Set' : 'Not set'
+      });
+
+      // Validate that at least one method is configured for each role
+      if ((!this.guestCodeHash && !this.guestCodePlain) ||
+          (!this.userCodeHash && !this.userCodePlain) ||
+          (!this.adminCodeHash && !this.adminCodePlain)) {
+        this.initialized = false;
+        const error = new Error('All access codes must be set in environment variables (either plain or hashed)');
+        console.error('❌ Access code initialization failed:', error.message);
+        throw error;
+      }
+
+      this.initialized = true;
+      console.log('🔐 Access codes initialized successfully');
+      if (this.guestCodeHash || this.userCodeHash || this.adminCodeHash) {
+        console.log('🔒 Using bcrypt hashed passwords for enhanced security');
+      }
+      if (this.guestCodePlain || this.userCodePlain || this.adminCodePlain) {
+        console.log('⚠️  Using plaintext passwords - consider using hashed versions for production');
+      }
+    } catch (error) {
       this.initialized = false;
-      throw new Error('All access codes must be set in environment variables (either plain or hashed)');
-    }
-
-    this.initialized = true;
-    console.log('🔐 Access codes initialized successfully');
-    if (this.guestCodeHash || this.userCodeHash || this.adminCodeHash) {
-      console.log('🔒 Using bcrypt hashed passwords for enhanced security');
-    }
-    if (this.guestCodePlain || this.userCodePlain || this.adminCodePlain) {
-      console.log('⚠️  Using plaintext passwords - consider using hashed versions for production');
+      console.error('❌ Critical error during access code initialization:', error);
+      throw error;
     }
   }
 
