@@ -100,21 +100,24 @@ jobs:
             
             echo "🔄 Starting deployment process..."
             
-            # Navigate to app directory
+            # Set up app directory
             APP_DIR="/opt/deadlizard-calendar"
-            sudo mkdir -p $APP_DIR
-            cd $APP_DIR
             
             # Clone repo if first time, otherwise pull
-            if [ ! -d ".git" ]; then
+            if [ ! -d "$APP_DIR" ]; then
               echo "📦 Initial clone of repository..."
-              sudo git clone https://github.com/theblkguy/deadLizard_calendar.git .
-              sudo chown -R ubuntu:ubuntu .
+              sudo git clone https://github.com/theblkguy/deadLizard_calendar.git $APP_DIR
+              sudo chown -R ubuntu:ubuntu $APP_DIR
             else
               echo "📥 Pulling latest changes..."
-              git fetch origin
-              git reset --hard origin/deployment-branch
+              cd $APP_DIR
+              sudo git fetch origin
+              sudo git reset --hard origin/deployment-branch
+              sudo chown -R ubuntu:ubuntu .
             fi
+            
+            # Navigate to app directory for subsequent commands
+            cd $APP_DIR
             
             # Create environment file
             echo "🔧 Setting up production environment..."
