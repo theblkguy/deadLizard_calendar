@@ -9,10 +9,6 @@ export const configurePassport = (): void => {
     ? "https://deadlizardjam.online/api/auth/google/callback"
     : "/api/auth/google/callback";
   
-  console.log('Configuring Google OAuth with callback URL:', callbackURL);
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('Google Client ID set:', !!process.env.GOOGLE_CLIENT_ID);
-  
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',

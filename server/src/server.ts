@@ -101,36 +101,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Debug endpoint to check environment variables (temporary)
-app.get('/api/debug/env', (req, res) => {
-  res.json({
-    NODE_ENV: process.env.NODE_ENV,
-    FRONTEND_URL: process.env.FRONTEND_URL,
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? '***SET***' : 'NOT_SET',
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? '***SET***' : 'NOT_SET',
-    MONGODB_URI: process.env.MONGODB_URI ? '***SET***' : 'NOT_SET',
-    JWT_SECRET: process.env.JWT_SECRET ? '***SET***' : 'NOT_SET',
-    SESSION_SECRET: process.env.SESSION_SECRET ? '***SET***' : 'NOT_SET'
-  });
-});
-
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error caught by global handler:', err.stack);
-  console.error('Error details:', {
-    message: err.message,
-    name: err.name,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
+  console.error('Server error:', err.message);
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: {
-      message: err.message,
-      name: err.name,
-      path: req.path
-    }
+    error: process.env.NODE_ENV === 'production' ? {} : { message: err.message }
   });
 });
 
