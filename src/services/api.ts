@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// Use relative path for API calls in production, localhost for development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? '/api'  // In production, nginx will proxy /api to the backend
+  : 'http://localhost:5000/api';  // For local development
 
 export interface AccessCodeResponse {
   success: boolean;
