@@ -219,3 +219,4 @@ For issues and questions:
 # Deploy with SESSION_SECRET for OAuth sessions
 # Restart application - fix 502 error
 # Restart after MongoDB Atlas IP whitelist update
+# Force restart to fix 502 error
