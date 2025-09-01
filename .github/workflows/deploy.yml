@@ -118,21 +118,20 @@ jobs:
             
             # Create environment file
             echo "🔧 Setting up production environment..."
-            sudo tee server/.env > /dev/null <<ENVEOF
-NODE_ENV=production
-PORT=5000
-MONGODB_URI=${{ secrets.MONGODB_URI }}
-JWT_SECRET=${{ secrets.JWT_SECRET }}
-SESSION_SECRET=${{ secrets.SESSION_SECRET }}
-AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-FRONTEND_URL=https://deadlizardjam.online
-GUEST_ACCESS_CODE=${{ secrets.GUEST_ACCESS_CODE }}
-USER_ACCESS_CODE=${{ secrets.USER_ACCESS_CODE }}
-ADMIN_ACCESS_CODE=${{ secrets.ADMIN_ACCESS_CODE }}
-ENVEOF
+            sudo rm -f server/.env
+            echo "NODE_ENV=production" | sudo tee server/.env > /dev/null
+            echo "PORT=5000" | sudo tee -a server/.env > /dev/null
+            echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" | sudo tee -a server/.env > /dev/null
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a server/.env > /dev/null
+            echo "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" | sudo tee -a server/.env > /dev/null
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" | sudo tee -a server/.env > /dev/null
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" | sudo tee -a server/.env > /dev/null
+            echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" | sudo tee -a server/.env > /dev/null
+            echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" | sudo tee -a server/.env > /dev/null
+            echo "FRONTEND_URL=https://deadlizardjam.online" | sudo tee -a server/.env > /dev/null
+            echo "GUEST_ACCESS_CODE=${{ secrets.GUEST_ACCESS_CODE }}" | sudo tee -a server/.env > /dev/null
+            echo "USER_ACCESS_CODE=${{ secrets.USER_ACCESS_CODE }}" | sudo tee -a server/.env > /dev/null
+            echo "ADMIN_ACCESS_CODE=${{ secrets.ADMIN_ACCESS_CODE }}" | sudo tee -a server/.env > /dev/null
             
             sudo chmod 600 server/.env
             sudo chown ubuntu:ubuntu server/.env
