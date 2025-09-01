@@ -141,13 +141,18 @@ jobs:
             
             # Install dependencies and build
             echo "📥 Installing dependencies..."
-            npm ci --only=production
-            cd server && npm ci --only=production
+            npm ci  # Install all dependencies including dev dependencies for build
+            cd server && npm ci
             
             echo "🔨 Building application..."
             cd /opt/deadlizard-calendar
             npm run build
             cd server && npm run build
+            
+            echo "🧹 Cleaning up dev dependencies..."
+            cd /opt/deadlizard-calendar
+            npm prune --omit=dev  # Remove dev dependencies after build
+            cd server && npm prune --omit=dev
             
             # Stop existing PM2 process
             echo "⏹️ Stopping existing application..."
