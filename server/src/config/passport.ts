@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import mongoose from 'mongoose';
 import User from '../models/User';
 
 export const configurePassport = (): void => {
@@ -37,10 +38,33 @@ export const configurePassport = (): void => {
     },
   async (accessToken, refreshToken, profile, done) => {
     try {
+      console.log('🔍 Google strategy callback received:', {
+        profileId: profile.id,
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName
+      });
+
+      // Check database connection
+      if (mongoose.connection.readyState !== 1) {
+        console.log('⚠️ Database not connected, returning profile data directly');
+        // Return profile data directly without database interaction
+        const tempUser = {
+          id: profile.id,
+          googleId: profile.id,
+          email: profile.emails?.[0]?.value || '',
+          name: profile.displayName || '',
+          picture: profile.photos?.[0]?.value || '',
+          role: 'user',
+          isTemporary: true
+        };
+        return done(null, tempUser);
+      }
+
       // Check if user already exists
       let user = await User.findOne({ googleId: profile.id });
       
       if (user) {
+        console.log('✅ Found existing user:', user.email);
         return done(null, user);
       }
       
@@ -54,8 +78,10 @@ export const configurePassport = (): void => {
       });
       
       await user.save();
+      console.log('✅ Created new user:', user.email);
       return done(null, user);
     } catch (error) {
+      console.error('❌ Google strategy error:', error);
       return done(error, false);
     }
   }));
