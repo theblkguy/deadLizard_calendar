@@ -143,6 +143,11 @@ jobs:
             echo "USER_ACCESS_CODE length: $(echo -n "${{ secrets.USER_ACCESS_CODE }}" | wc -c)"
             echo "ADMIN_ACCESS_CODE length: $(echo -n "${{ secrets.ADMIN_ACCESS_CODE }}" | wc -c)"
             
+            # Check what's actually in the .env file
+            echo "🔍 Checking generated .env file:"
+            echo "Lines containing ACCESS_CODE:"
+            grep ACCESS_CODE server/.env || echo "No ACCESS_CODE lines found"
+            
             sudo chmod 600 server/.env
             sudo chown ubuntu:ubuntu server/.env
             
