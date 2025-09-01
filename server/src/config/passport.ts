@@ -5,12 +5,18 @@ import User from '../models/User';
 
 export const configurePassport = (): void => {
   // Google OAuth Strategy
+  const callbackURL = process.env.NODE_ENV === 'production' 
+    ? "https://deadlizardjam.online/api/auth/google/callback"
+    : "/api/auth/google/callback";
+  
+  console.log('Configuring Google OAuth with callback URL:', callbackURL);
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Google Client ID set:', !!process.env.GOOGLE_CLIENT_ID);
+  
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: process.env.NODE_ENV === 'production' 
-      ? "https://deadlizardjam.online/api/auth/google/callback"
-      : "/api/auth/google/callback"
+    callbackURL: callbackURL
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
