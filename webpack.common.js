@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const fs = require('fs');
 
 // Check if template exists
-const templatePath = path.join(__dirname, 'public', 'index.html');
+const templatePath = path.join(__dirname, 'src', 'template', 'index.html');
 const templateExists = fs.existsSync(templatePath);
 
 module.exports = {
