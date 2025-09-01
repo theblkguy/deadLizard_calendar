@@ -20,6 +20,17 @@ router.get('/google', (req, res, next) => {
   passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
 });
 
+// Test Google OAuth with direct redirect (bypass passport)
+router.get('/google-direct', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = 'https://deadlizardjam.online/api/auth/test-direct-callback';
+  const scope = 'profile email';
+  
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  
+  res.redirect(googleAuthUrl);
+});
+
 // Test endpoint to check if passport is working
 router.get('/test-passport', (req, res) => {
   res.json({
@@ -38,6 +49,18 @@ router.get('/debug-env', (req, res) => {
     jwtSecret: process.env.JWT_SECRET ? 'Set' : 'Not set',
     nodeEnv: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
+  });
+});
+
+// Simple test callback to verify routing works
+router.get('/test-direct-callback', (req, res) => {
+  console.log('🚨 Direct callback test reached');
+  console.log('🚨 Query params:', req.query);
+  res.json({
+    message: 'Direct callback test working',
+    query: req.query,
+    timestamp: new Date().toISOString(),
+    receivedCode: req.query.code ? 'Yes' : 'No'
   });
 });
 
