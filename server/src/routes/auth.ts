@@ -10,7 +10,7 @@ const router = express.Router();
 // Working Google OAuth (bypasses passport completely)
 router.get('/google-working', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = 'https://deadlizardjam.online/api/auth/google-working-callback';
+  const redirectUri = 'https://deadlizardjam.online/api/auth/google/callback'; // Use existing URI
   const scope = 'profile email';
   
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -50,7 +50,7 @@ router.get('/google-working-callback', async (req, res) => {
         code: code as string,
         client_id: process.env.GOOGLE_CLIENT_ID || '',
         client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-        redirect_uri: 'https://deadlizardjam.online/api/auth/google-working-callback',
+        redirect_uri: 'https://deadlizardjam.online/api/auth/google/callback',
         grant_type: 'authorization_code'
       })
     });
@@ -168,167 +168,79 @@ router.get('/test-callback', (req, res) => {
   });
 });
 
-router.get('/google/callback',
-  (req, res, next) => {
-    console.log('🔍 OAuth callback initiated');
-    console.log('🔍 Query params:', req.query);
+router.get('/google/callback', async (req, res) => {
+  try {
+    console.log('🔍 Fixed OAuth callback received:', req.query);
     
-    passport.authenticate('google', { 
-      session: false
-    }, (err, user, info) => {
-      console.log('🔍 Passport authenticate callback:', { err, user: user ? 'Present' : 'Missing', info });
-      
-      if (err) {
-        console.error('❌ Passport authentication error:', err);
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-        return res.redirect(`${frontendURL}/auth/callback?error=passport_error`);
-      }
-      
-      if (!user) {
-        console.error('❌ No user returned from passport');
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-        return res.redirect(`${frontendURL}/auth/callback?error=no_user`);
-      }
-      
-      // Manually set user on request and continue
-      req.user = user;
-      next();
-    })(req, res, next);
-  },
-  async (req, res) => {
-    try {
-      console.log('🔍 Google OAuth callback reached after authentication');
-      const user = req.user as any;
-      
-      if (!user) {
-        console.error('❌ No user data received from Google OAuth');
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-        return res.redirect(`${frontendURL}/auth/callback?error=no_user_data`);
-      }
-
-      console.log('🔍 User data from Google:', {
-        id: user.id,
-        email: user.email,
-        name: user.name
-      });
-
-      // Get the role from session (passed from initial OAuth request)
-      const pendingRole = (req.session as any)?.pendingRole || 'guest';
-      console.log('🔍 Pending role from session:', pendingRole);
-      
-      // Map role strings to enum values (lowercase for database)
-      const roleMap: { [key: string]: 'guest' | 'user' | 'admin' } = {
-        'guest': 'guest',
-        'user': 'user',
-        'admin': 'admin'
-      };
-      
-      const finalRole = roleMap[pendingRole] || 'guest';
-      console.log('🔍 Final role assigned:', finalRole);
-      
-      // Clean up the name by removing special characters and emojis
-      const cleanName = user.name
-        .replace(/[⚡️🔥💥✨🌟⭐️🎵🎶🎸🥁🎤🎧🎼🎹]/g, '') // Remove common emojis
-        .replace(/[^\w\s.-]/g, '') // Remove non-alphanumeric characters except spaces, dots, hyphens
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .trim(); // Remove leading/trailing whitespace
-
-      console.log('🔍 Cleaned name:', cleanName);
-
-      // Check database connection before trying to query
-      if (mongoose.connection.readyState !== 1) {
-        console.error('❌ Database not connected, creating temporary token');
-        // Create a temporary JWT token without database interaction
-        const tempToken = jwt.sign(
-          { 
-            userId: `temp_${user.id}`,
-            email: user.email, 
-            name: cleanName,
-            picture: user.picture,
-            role: finalRole
-          },
-          process.env.JWT_SECRET || 'deadlizard-jwt-secret',
-          { expiresIn: '24h' }
-        );
-        
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-        return res.redirect(`${frontendURL}/auth/callback?token=${tempToken}&temp=true`);
-      }
-
-      // Find or create user in database
-      // First try to find by Google ID, then by email
-      let dbUser = await User.findOne({ 
-        $or: [
-          { googleId: user.id },
-          { email: user.email }
-        ]
-      });
-      
-      if (!dbUser) {
-        // Create new user if none exists
-        dbUser = new User({
-          googleId: user.id,
-          email: user.email,
-          name: cleanName,
-          picture: user.picture,
-          role: finalRole
-        });
-        await dbUser.save();
-        console.log(`✅ Created new user: ${user.email} with role: ${finalRole}`);
-      } else {
-        // Update existing user info
-        dbUser.name = cleanName;
-        dbUser.picture = user.picture;
-        
-        // Update Google ID if it's missing (for users who signed up via email)
-        if (!dbUser.googleId) {
-          dbUser.googleId = user.id;
-        }
-        
-        // Keep the user's existing role instead of overriding with session role
-        // Only override if the user is accessing with admin credentials
-        if (finalRole === 'admin' && dbUser.role !== 'admin') {
-          console.log(`🔄 Updating user ${user.email} role from ${dbUser.role} to ${finalRole}`);
-          dbUser.role = finalRole;
-        }
-        
-        await dbUser.save();
-        console.log(`✅ Updated existing user: ${user.email} (role: ${dbUser.role})`);
-      }
-
-      // Create JWT token
-      const token = jwt.sign(
-        { 
-          userId: dbUser._id,
-          email: user.email, 
-          name: cleanName,
-          picture: user.picture,
-          role: dbUser.role  // Use the actual role from database, not session role
-        },
-        process.env.JWT_SECRET || 'deadlizard-jwt-secret',
-        { expiresIn: '24h' }
-      );
-      
-      // Clear the pending role from session
-      if (req.session) {
-        delete (req.session as any).pendingRole;
-      }
-      
-      // Redirect to frontend with token
-      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-      res.redirect(`${frontendURL}/auth/callback?token=${token}`);
-    } catch (error) {
-      console.error('Google auth callback error:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        user: req.user ? { id: (req.user as any).id, email: (req.user as any).email } : 'No user'
-      });
-      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
-      res.redirect(`${frontendURL}/auth/callback?error=auth_failed`);
+    const { code, error } = req.query;
+    
+    if (error) {
+      console.error('❌ Google OAuth error:', error);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=google_${error}`);
     }
+    
+    if (!code) {
+      console.error('❌ No authorization code received');
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_code`);
+    }
+    
+    // Exchange code for token using fetch
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code: code as string,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: 'https://deadlizardjam.online/api/auth/google/callback',
+        grant_type: 'authorization_code'
+      })
+    });
+    
+    const tokenData = await tokenResponse.json() as any;
+    
+    if (!tokenData.access_token) {
+      console.error('❌ Failed to get access token:', tokenData);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_token`);
+    }
+    
+    // Get user profile
+    const profileResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`);
+    const userProfile = await profileResponse.json() as any;
+    
+    if (!userProfile.email) {
+      console.error('❌ Failed to get user profile:', userProfile);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_profile`);
+    }
+    
+    console.log('✅ Fixed OAuth success:', {
+      email: userProfile.email,
+      name: userProfile.name
+    });
+    
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        userId: `google_${userProfile.id}`,
+        email: userProfile.email,
+        name: userProfile.name,
+        picture: userProfile.picture,
+        role: 'user'
+      },
+      process.env.JWT_SECRET || 'deadlizard-jwt-secret',
+      { expiresIn: '24h' }
+    );
+    
+    // Redirect with token
+    res.redirect(`https://deadlizardjam.online/auth/callback?token=${token}&fixed=true`);
+    
+  } catch (error) {
+    console.error('❌ Fixed OAuth callback error:', error);
+    res.redirect(`https://deadlizardjam.online/auth/callback?error=fixed_failed`);
   }
-);
+});
 
 // Cleanup route for development - remove invalid users
 router.delete('/cleanup', async (req: any, res: any) => {
