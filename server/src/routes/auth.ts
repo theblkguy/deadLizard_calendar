@@ -64,6 +64,21 @@ router.get('/test-direct-callback', (req, res) => {
   });
 });
 
+// Debug callback to see what Google is actually sending us
+router.get('/debug-callback', (req, res) => {
+  console.log('🔍 Debug callback received from Google:');
+  console.log('🔍 Query params:', req.query);
+  console.log('🔍 Headers:', req.headers);
+  
+  res.json({
+    message: 'Debug callback - Google OAuth data',
+    query: req.query,
+    timestamp: new Date().toISOString(),
+    receivedCode: req.query.code ? 'Yes' : 'No',
+    codeLength: req.query.code ? (req.query.code as string).length : 0
+  });
+});
+
 // Test endpoint to check if passport is working
 router.get('/test-callback', (req, res) => {
   console.log('🚨 Test callback reached');
