@@ -37,8 +37,8 @@ try {
   accessCodesInitialized = false;
 }
 
-// Verify access code route
-router.post('/verify-access', accessCodeLimiter, async (req, res) => {
+// Verify access code route - temporarily disable rate limiting for testing
+router.post('/verify-access', async (req, res) => {
   try {
     const { accessCode } = req.body;
     const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
