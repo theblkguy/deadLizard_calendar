@@ -17,8 +17,7 @@ import { configurePassport } from './config/passport';
 import authRoutes from './routes/auth';
 import bookingRoutes from './routes/bookings';
 import userRoutes from './routes/users';
-// Temporarily disable access routes to debug
-// import accessRoutes from './routes/access';
+import accessRoutes from './routes/access';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -84,7 +83,7 @@ if (process.env.NODE_ENV !== 'production') {
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
-// app.use('/api/access', accessRoutes);  // Temporarily disabled for debugging
+app.use('/api/access', accessRoutes);
 
 // Health check endpoint for deployment monitoring
 app.get('/api/health', (req, res) => {

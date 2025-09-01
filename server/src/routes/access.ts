@@ -16,8 +16,7 @@ const accessCodeLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Initialize access codes - temporarily disabled to prevent server crashes
-console.log('⚠️  Access code initialization temporarily disabled for debugging');
+// Initialize access codes
 let accessCodesInitialized = false;
 
 try {
