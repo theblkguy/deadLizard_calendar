@@ -18,6 +18,7 @@ import authRoutes from './routes/auth';
 import bookingRoutes from './routes/bookings';
 import userRoutes from './routes/users';
 import accessRoutes from './routes/access';
+import manualOAuthRoutes from './routes/manual-oauth';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -79,11 +80,12 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname, '../../dist')));
 }
 
-// API routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/access', accessRoutes);
+app.use('/api/manual-oauth', manualOAuthRoutes);
 
 // Health check endpoint for deployment monitoring
 app.get('/api/health', (req, res) => {
