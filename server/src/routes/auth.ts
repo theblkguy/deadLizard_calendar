@@ -7,17 +7,95 @@ import User from '../models/User';
 const router = express.Router();
 
 // Google OAuth routes
-router.get('/google', (req, res, next) => {
-  console.log('🔍 Google OAuth initiation requested');
-  console.log('🔍 Query parameters:', req.query);
+// Working Google OAuth (bypasses passport completely)
+router.get('/google-working', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = 'https://deadlizardjam.online/api/auth/google-working-callback';
+  const scope = 'profile email';
   
-  // Store the role from query parameter in session for use in callback
-  if (req.query.role) {
-    req.session = req.session || {};
-    (req.session as any).pendingRole = req.query.role;
-    console.log('🔍 Stored pending role in session:', req.query.role);
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `response_type=code&` +
+    `client_id=${clientId}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `scope=${encodeURIComponent(scope)}`;
+  
+  console.log('🔍 Working Google OAuth redirect:', googleAuthUrl);
+  res.redirect(googleAuthUrl);
+});
+
+// Working Google OAuth callback (bypasses passport)
+router.get('/google-working-callback', async (req, res) => {
+  try {
+    console.log('🔍 Working OAuth callback received:', req.query);
+    
+    const { code, error } = req.query;
+    
+    if (error) {
+      console.error('❌ Google OAuth error:', error);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=google_${error}`);
+    }
+    
+    if (!code) {
+      console.error('❌ No authorization code received');
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_code`);
+    }
+    
+    // Exchange code for token using fetch
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code: code as string,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: 'https://deadlizardjam.online/api/auth/google-working-callback',
+        grant_type: 'authorization_code'
+      })
+    });
+    
+    const tokenData = await tokenResponse.json() as any;
+    
+    if (!tokenData.access_token) {
+      console.error('❌ Failed to get access token:', tokenData);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_token`);
+    }
+    
+    // Get user profile
+    const profileResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`);
+    const userProfile = await profileResponse.json() as any;
+    
+    if (!userProfile.email) {
+      console.error('❌ Failed to get user profile:', userProfile);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_profile`);
+    }
+    
+    console.log('✅ Working OAuth success:', {
+      email: userProfile.email,
+      name: userProfile.name
+    });
+    
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        userId: `google_${userProfile.id}`,
+        email: userProfile.email,
+        name: userProfile.name,
+        picture: userProfile.picture,
+        role: 'user'
+      },
+      process.env.JWT_SECRET || 'deadlizard-jwt-secret',
+      { expiresIn: '24h' }
+    );
+    
+    // Redirect with token
+    res.redirect(`https://deadlizardjam.online/auth/callback?token=${token}&working=true`);
+    
+  } catch (error) {
+    console.error('❌ Working OAuth callback error:', error);
+    res.redirect(`https://deadlizardjam.online/auth/callback?error=working_failed`);
   }
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
 });
 
 // Test Google OAuth with direct redirect (bypass passport)
