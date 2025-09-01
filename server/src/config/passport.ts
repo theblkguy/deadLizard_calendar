@@ -4,16 +4,25 @@ import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import User from '../models/User';
 
 export const configurePassport = (): void => {
-  // Google OAuth Strategy
-  const callbackURL = process.env.NODE_ENV === 'production' 
-    ? "https://deadlizardjam.online/api/auth/google/callback"
-    : "/api/auth/google/callback";
-  
-  passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: callbackURL
-  },
+  try {
+    console.log('🔍 Configuring passport strategies...');
+    
+    // Google OAuth Strategy
+    const callbackURL = process.env.NODE_ENV === 'production' 
+      ? "https://deadlizardjam.online/api/auth/google/callback"
+      : "/api/auth/google/callback";
+    
+    console.log('🔍 Google OAuth configuration:', {
+      clientID: process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Not set',
+      callbackURL: callbackURL
+    });
+
+    passport.use(new GoogleStrategy({
+      clientID: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      callbackURL: callbackURL
+    },
   async (accessToken, refreshToken, profile, done) => {
     try {
       // Check if user already exists
@@ -70,4 +79,11 @@ export const configurePassport = (): void => {
       done(error, false);
     }
   });
+  
+  console.log('✅ Passport configured successfully');
+  } catch (error) {
+    console.error('❌ Failed to configure passport:', error);
+    // Don't throw error - let the server continue
+    console.log('⚠️  Server will continue without passport authentication');
+  }
 };

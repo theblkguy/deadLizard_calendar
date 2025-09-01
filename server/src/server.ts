@@ -9,6 +9,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import passport from 'passport';
+import mongoose from 'mongoose';
 import { connectDB } from './config/database';
 import { configurePassport } from './config/passport';
 
@@ -22,11 +23,24 @@ import userRoutes from './routes/users';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+console.log('🚀 Starting Dead Lizard Calendar server...');
+console.log('🔍 Environment:', process.env.NODE_ENV || 'development');
 
-// Configure Passport
-configurePassport();
+// Connect to MongoDB with error handling
+console.log('📊 Initializing database connection...');
+connectDB().catch(error => {
+  console.error('❌ Database initialization failed:', error);
+  console.log('⚠️  Continuing without database');
+});
+
+// Configure Passport with error handling
+console.log('🔐 Initializing authentication...');
+try {
+  configurePassport();
+} catch (error) {
+  console.error('❌ Passport configuration failed:', error);
+  console.log('⚠️  Continuing without passport authentication');
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -86,20 +100,31 @@ app.get('/api/health', (req, res) => {
 
 // Health check endpoint
 // Health check endpoint
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
+  const healthData = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'development',
     uptime: process.uptime(),
     memory: {
-      rss: process.memoryUsage().rss,
-      heapTotal: process.memoryUsage().heapTotal,
-      heapUsed: process.memoryUsage().heapUsed
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100,
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024 * 100) / 100
     },
-    service: 'Dead Lizard Calendar API'
+    database: {
+      connected: mongoose.connection.readyState === 1
+    }
+  };
+  
+  console.log('🏥 Health check requested:', {
+    timestamp: healthData.timestamp,
+    uptime: healthData.uptime,
+    memory: healthData.memory,
+    database: healthData.database
   });
+  
+  res.json(healthData);
 });
 
 // Error handling middleware
@@ -132,4 +157,21 @@ if (process.env.NODE_ENV !== 'production') {
 app.listen(PORT, () => {
   console.log(`🦎 Dead Lizard Calendar API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Server URL: http://localhost:${PORT}`);
+  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+}).on('error', (error) => {
+  console.error('❌ Server failed to start:', error);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
