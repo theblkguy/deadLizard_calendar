@@ -28,6 +28,19 @@ router.get('/test-passport', (req, res) => {
   });
 });
 
+// Debug endpoint to check environment variables
+router.get('/debug-env', (req, res) => {
+  res.json({
+    message: 'Environment variable status',
+    googleClientId: process.env.GOOGLE_CLIENT_ID ? `Set (${process.env.GOOGLE_CLIENT_ID.substring(0, 10)}...)` : 'Not set',
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? `Set (${process.env.GOOGLE_CLIENT_SECRET.substring(0, 6)}...)` : 'Not set',
+    mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set',
+    jwtSecret: process.env.JWT_SECRET ? 'Set' : 'Not set',
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Test endpoint to check if passport is working
 router.get('/test-callback', (req, res) => {
   console.log('🚨 Test callback reached');

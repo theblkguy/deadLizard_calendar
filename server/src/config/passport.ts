@@ -12,15 +12,27 @@ export const configurePassport = (): void => {
       ? "https://deadlizardjam.online/api/auth/google/callback"
       : "/api/auth/google/callback";
     
+    const clientID = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    
     console.log('🔍 Google OAuth configuration:', {
-      clientID: process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Not set',
+      clientID: clientID ? `Set (${clientID.substring(0, 10)}...)` : 'Not set',
+      clientSecret: clientSecret ? `Set (${clientSecret.substring(0, 6)}...)` : 'Not set',
       callbackURL: callbackURL
     });
 
+    if (!clientID || !clientSecret) {
+      console.error('❌ Google OAuth credentials not found! Skipping Google strategy.');
+      console.error('Missing:', {
+        clientID: !clientID,
+        clientSecret: !clientSecret
+      });
+      return;
+    }
+
     passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      clientID: clientID,
+      clientSecret: clientSecret,
       callbackURL: callbackURL
     },
   async (accessToken, refreshToken, profile, done) => {
