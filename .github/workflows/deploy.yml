@@ -104,16 +104,16 @@ jobs:
             APP_DIR="/opt/deadlizard-calendar"
             
             # Clone repo if first time, otherwise pull
-            if [ ! -d "$APP_DIR" ]; then
+            if [ ! -d "$APP_DIR/.git" ]; then
               echo "📦 Initial clone of repository..."
+              sudo rm -rf $APP_DIR  # Remove any existing non-git directory
               sudo git clone https://github.com/theblkguy/deadLizard_calendar.git $APP_DIR
               sudo chown -R ubuntu:ubuntu $APP_DIR
             else
               echo "📥 Pulling latest changes..."
               cd $APP_DIR
-              sudo git fetch origin
-              sudo git reset --hard origin/deployment-branch
-              sudo chown -R ubuntu:ubuntu .
+              sudo -u ubuntu git fetch origin
+              sudo -u ubuntu git reset --hard origin/deployment-branch
             fi
             
             # Navigate to app directory for subsequent commands
