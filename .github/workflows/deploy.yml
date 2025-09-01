@@ -168,8 +168,23 @@ jobs:
             echo "🌐 Configuring nginx..."
             sudo cp /opt/deadlizard-calendar/nginx-deadlizard.conf /etc/nginx/sites-available/deadlizard
             sudo ln -sf /etc/nginx/sites-available/deadlizard /etc/nginx/sites-enabled/deadlizard
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t && sudo systemctl reload nginx
+            
+            # Test nginx configuration before removing default
+            if sudo nginx -t; then
+              echo "✅ Nginx configuration is valid"
+              sudo rm -f /etc/nginx/sites-enabled/default
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded successfully"
+            else
+              echo "❌ Nginx configuration test failed, keeping default site"
+              sudo rm -f /etc/nginx/sites-enabled/deadlizard
+              sudo systemctl reload nginx
+              exit 1
+            fi
+            
+            # Ensure nginx is running
+            sudo systemctl enable nginx
+            sudo systemctl start nginx
             
             # Health check
             echo "🏥 Performing health check..."
