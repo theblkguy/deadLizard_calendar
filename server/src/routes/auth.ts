@@ -53,13 +53,35 @@ router.get('/test-callback', (req, res) => {
 });
 
 router.get('/google/callback',
-  passport.authenticate('google', { 
-    session: false,
-    failureRedirect: '/auth/callback?error=oauth_failed'
-  }),
+  (req, res, next) => {
+    console.log('🔍 OAuth callback initiated');
+    console.log('🔍 Query params:', req.query);
+    
+    passport.authenticate('google', { 
+      session: false
+    }, (err, user, info) => {
+      console.log('🔍 Passport authenticate callback:', { err, user: user ? 'Present' : 'Missing', info });
+      
+      if (err) {
+        console.error('❌ Passport authentication error:', err);
+        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
+        return res.redirect(`${frontendURL}/auth/callback?error=passport_error`);
+      }
+      
+      if (!user) {
+        console.error('❌ No user returned from passport');
+        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5000';
+        return res.redirect(`${frontendURL}/auth/callback?error=no_user`);
+      }
+      
+      // Manually set user on request and continue
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   async (req, res) => {
     try {
-      console.log('🔍 Google OAuth callback initiated');
+      console.log('🔍 Google OAuth callback reached after authentication');
       const user = req.user as any;
       
       if (!user) {
