@@ -7,7 +7,7 @@ const router = express.Router();
 // Rate limiting middleware for access code attempts
 const accessCodeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  max: 20, // Increased limit for testing - Limit each IP to 20 requests per windowMs
   message: {
     error: 'Too many access attempts, please try again later',
     retryAfter: '15 minutes'
