@@ -10,6 +10,13 @@
       "env_production": {
         "NODE_ENV": "production"
       },
+        "ACCESS_CODE_GUEST": "noShoes!25",
+        "ACCESS_CODE_USER": "L1zardG0at?",
+        "ACCESS_CODE_ADMIN": "L0ngL1veTr33!",
+        "GOOGLE_CLIENT_ID": "your-google-client-id.apps.googleusercontent.com",
+        "GOOGLE_CLIENT_SECRET": "your-google-client-secret",
+        "GOOGLE_CALLBACK_URL": "https://deadlizardjam.online/auth/google/callback"
+      },
       "env_staging": {
         "NODE_ENV": "staging",
         "PORT": "5001"
@@ -32,5 +39,15 @@
       "shutdown_with_message": true,
       "health_check_grace_period": 3000
     }
-  ]
+  ],
+  "deploy": {
+    "production": {
+      "user": "ubuntu",
+      "host": ["your-aws-instance-ip"],
+      "ref": "origin/deployment-branch",
+      "repo": "git@github.com:theblkguy/deadLizard_calendar.git",
+      "path": "/opt/deadlizard-calendar",
+      "post-deploy": "npm install --only=production && npm run build:all && pm2 reload ecosystem.config.json --env production"
+    }
+  }
 }

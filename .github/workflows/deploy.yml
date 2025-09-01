@@ -122,12 +122,12 @@ jobs:
             
             # Create environment file
             echo "🔧 Setting up production environment..."
-            sudo rm -f server/.env
-            echo "NODE_ENV=production" | sudo tee server/.env > /dev/null
-            echo "PORT=5000" | sudo tee -a server/.env > /dev/null
-            echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" | sudo tee -a server/.env > /dev/null
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a server/.env > /dev/null
-            echo "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" | sudo tee -a server/.env > /dev/null
+            sudo rm -f .env
+            echo "NODE_ENV=production" | sudo tee .env > /dev/null
+            echo "PORT=5000" | sudo tee -a .env > /dev/null
+            echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" | sudo tee -a .env > /dev/null
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a .env > /dev/null
+            echo "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" | sudo tee -a .env > /dev/null
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" | sudo tee -a server/.env > /dev/null
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" | sudo tee -a server/.env > /dev/null
             echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" | sudo tee -a server/.env > /dev/null
@@ -170,10 +170,10 @@ jobs:
             echo "⏹️ Stopping existing application..."
             pm2 stop deadlizard-calendar || true
             
-            # Start with PM2
+            # Start with PM2 using ecosystem config
             echo "▶️ Starting application with PM2..."
-            cd /opt/deadlizard-calendar/server
-            pm2 start dist/server.js --name deadlizard-calendar
+            cd /opt/deadlizard-calendar
+            pm2 start ecosystem.config.json --env production
             pm2 save
             
             # Configure nginx

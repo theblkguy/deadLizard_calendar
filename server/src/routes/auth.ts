@@ -8,12 +8,35 @@ const router = express.Router();
 
 // Google OAuth routes
 router.get('/google', (req, res, next) => {
+  console.log('🔍 Google OAuth initiation requested');
+  console.log('🔍 Query parameters:', req.query);
+  
   // Store the role from query parameter in session for use in callback
   if (req.query.role) {
     req.session = req.session || {};
     (req.session as any).pendingRole = req.query.role;
+    console.log('🔍 Stored pending role in session:', req.query.role);
   }
   passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
+
+// Test endpoint to check if passport is working
+router.get('/test-passport', (req, res) => {
+  res.json({
+    message: 'Passport auth routes are working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint to check if passport is working
+router.get('/test-callback', (req, res) => {
+  console.log('🚨 Test callback reached');
+  console.log('🚨 Query params:', req.query);
+  res.json({
+    message: 'Test callback endpoint working',
+    query: req.query,
+    timestamp: new Date().toISOString()
+  });
 });
 
 router.get('/google/callback',
