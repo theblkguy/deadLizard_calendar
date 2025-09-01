@@ -94,10 +94,21 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+  console.error('Error caught by global handler:', err.stack);
+  console.error('Error details:', {
+    message: err.message,
+    name: err.name,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'production' ? {} : err.message
+    error: {
+      message: err.message,
+      name: err.name,
+      path: req.path
+    }
   });
 });
 
