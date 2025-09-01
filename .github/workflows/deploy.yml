@@ -123,9 +123,14 @@ jobs:
           cp package*.json deployment-package/
           cp ecosystem.config.json deployment-package/
           cp deploy.sh deployment-package/
+          cp deadlizard-calendar.service deployment-package/
+          cp nginx-deadlizard.conf deployment-package/
           
           # Create archive
           tar -czf dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz -C deployment-package .
+          
+          echo "📊 Deployment package contents:"
+          tar -tzf dead-lizard-calendar-${{ needs.check-changes.outputs.commit-sha }}.tar.gz
           
           echo "📊 Deployment package size:"
           ls -lh *.tar.gz
