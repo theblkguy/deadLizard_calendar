@@ -215,3 +215,4 @@ For issues and questions:
 
 🦎 **Dead Lizard Studio** - Rock on! 🎸
 # Force deployment with updated Google OAuth secrets
+# Deploy with MongoDB and JWT secrets configured
