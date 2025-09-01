@@ -171,17 +171,22 @@ router.get('/test-callback', (req, res) => {
 router.get('/google/callback', async (req, res) => {
   try {
     console.log('🔍 Fixed OAuth callback received:', req.query);
+    console.log('🔍 All query parameters:', Object.keys(req.query));
+    console.log('🔍 Code present:', !!req.query.code);
+    console.log('🔍 Error present:', !!req.query.error);
     
     const { code, error } = req.query;
     
     if (error) {
       console.error('❌ Google OAuth error:', error);
-      return res.redirect(`https://deadlizardjam.online/auth/callback?error=google_${error}`);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=google_${error}&debug=error_from_google`);
     }
     
     if (!code) {
       console.error('❌ No authorization code received');
-      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_code`);
+      console.error('❌ Available parameters:', Object.keys(req.query));
+      console.error('❌ Full query object:', req.query);
+      return res.redirect(`https://deadlizardjam.online/auth/callback?error=no_code&debug=missing_auth_code&params=${encodeURIComponent(JSON.stringify(req.query))}`);
     }
     
     // Exchange code for token using fetch
