@@ -28,8 +28,9 @@ const AuthCallbackPage: React.FC = () => {
       }
 
       try {
-        // Decode the JWT token to get user info
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Decode URL-encoded token and parse JWT payload
+        const decodedToken = decodeURIComponent(token);
+        const payload = JSON.parse(atob(decodedToken.split('.')[1]));
         
         // Create user object from token payload
         const user = {
@@ -40,8 +41,8 @@ const AuthCallbackPage: React.FC = () => {
           role: payload.role as UserRole
         };
 
-        // Store token in localStorage for API calls
-        localStorage.setItem('token', token);
+        // Store decoded token in localStorage for API calls
+        localStorage.setItem('token', decodedToken);
 
         // Login the user
         login(user);

@@ -89,8 +89,8 @@ router.get('/google-working-callback', async (req, res) => {
       { expiresIn: '24h' }
     );
     
-    // Redirect with token
-    res.redirect(`https://deadlizardjam.online/auth/callback?token=${token}&working=true`);
+    // Redirect with token (URL encode the token to prevent corruption)
+    res.redirect(`https://deadlizardjam.online/auth/callback?token=${encodeURIComponent(token)}&working=true`);
     
   } catch (error) {
     console.error('❌ Working OAuth callback error:', error);
