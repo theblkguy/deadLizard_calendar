@@ -98,6 +98,25 @@ router.get('/google-working-callback', async (req, res) => {
   }
 });
 
+// Standard Google OAuth route (what people expect)
+router.get('/google', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = 'https://deadlizardjam.online/api/auth/google/callback';
+  const scope = 'profile email';
+  const role = typeof req.query.role === 'string' ? req.query.role : ''; // Get role from query parameter
+  
+  // Build the Google OAuth URL
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `response_type=code&` +
+    `client_id=${clientId}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `scope=${encodeURIComponent(scope)}` +
+    (role ? `&state=${encodeURIComponent(role)}` : ''); // Pass role as state
+  
+  console.log('🔍 Google OAuth redirect with role:', role);
+  res.redirect(googleAuthUrl);
+});
+
 // Test Google OAuth with direct redirect (bypass passport)
 router.get('/google-direct', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
