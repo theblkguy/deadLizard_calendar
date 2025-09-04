@@ -28,9 +28,26 @@ const AuthCallbackPage: React.FC = () => {
       }
 
       try {
+        // Debug: Log the raw token received
+        console.log('🔍 Raw token received:', token);
+        console.log('🔍 Token length:', token.length);
+        console.log('🔍 Token parts count:', token.split('.').length);
+        
         // Decode URL-encoded token and parse JWT payload
         const decodedToken = decodeURIComponent(token);
-        const payload = JSON.parse(atob(decodedToken.split('.')[1]));
+        console.log('🔍 Decoded token:', decodedToken);
+        console.log('🔍 Decoded token parts count:', decodedToken.split('.').length);
+        
+        const tokenParts = decodedToken.split('.');
+        if (tokenParts.length !== 3) {
+          throw new Error(`Invalid JWT format - expected 3 parts, got ${tokenParts.length}`);
+        }
+        
+        console.log('🔍 JWT Header:', tokenParts[0]);
+        console.log('🔍 JWT Payload (base64):', tokenParts[1]);
+        console.log('🔍 JWT Signature:', tokenParts[2]);
+        
+        const payload = JSON.parse(atob(tokenParts[1]));
         
         // Create user object from token payload
         const user = {
