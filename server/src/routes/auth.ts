@@ -257,8 +257,8 @@ router.get('/google/callback', async (req, res) => {
       { expiresIn: '24h' }
     );
     
-    // Redirect with token
-    res.redirect(`https://deadlizardjam.online/auth/callback?token=${token}&fixed=true`);
+    // Redirect with token (URL encode the token to prevent corruption)
+    res.redirect(`https://deadlizardjam.online/auth/callback?token=${encodeURIComponent(token)}&fixed=true`);
     
   } catch (error) {
     console.error('❌ Fixed OAuth callback error:', error);
