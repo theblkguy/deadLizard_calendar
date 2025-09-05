@@ -15,7 +15,26 @@ const getAuthHeaders = () => {
   console.log('🔍 Token check:', token ? 'Token found' : 'No token found');
   if (token) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Properly decode base64url (JWT uses base64url encoding, not standard base64)
+      const base64UrlDecode = (str: string) => {
+        // Convert base64url to base64
+        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        try {
+          // Use TextDecoder for proper Unicode handling
+          const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          return new TextDecoder().decode(bytes);
+        } catch (e) {
+          console.error('Base64 decode error:', e);
+          // Fallback to atob if TextDecoder fails
+          return atob(base64);
+        }
+      };
+      
+      const payload = JSON.parse(base64UrlDecode(token.split('.')[1]));
       console.log('🔍 Token payload:', { 
         userId: payload.userId, 
         email: payload.email, 
