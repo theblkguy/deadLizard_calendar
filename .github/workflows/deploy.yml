@@ -129,9 +129,9 @@ jobs:
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" | sudo tee -a .env > /dev/null
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a .env > /dev/null
             echo "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" | sudo tee -a .env > /dev/null
-            echo "ACCESS_CODE_GUEST=${{ secrets.GUEST_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
-            echo "ACCESS_CODE_USER=${{ secrets.USER_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
-            echo "ACCESS_CODE_ADMIN=${{ secrets.ADMIN_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
+            echo "GUEST_ACCESS_CODE=${{ secrets.GUEST_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
+            echo "USER_ACCESS_CODE=${{ secrets.USER_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
+            echo "ADMIN_ACCESS_CODE=${{ secrets.ADMIN_ACCESS_CODE }}" | sudo tee -a .env > /dev/null
             echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" | sudo tee -a .env > /dev/null
             echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" | sudo tee -a .env > /dev/null
             echo "GOOGLE_CALLBACK_URL=https://deadlizardjam.online/api/auth/google/callback" | sudo tee -a .env > /dev/null
