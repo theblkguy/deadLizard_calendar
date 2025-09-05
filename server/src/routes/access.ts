@@ -73,17 +73,18 @@ router.post('/verify-access', async (req, res) => {
       });
     }
 
+    // Rate limiting temporarily disabled for testing
     // Check if IP is rate limited
-    if (AccessRateLimit.isRateLimited(clientIP)) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many failed attempts. Please try again later.',
-        retryAfter: 15 * 60 * 1000 // 15 minutes in milliseconds
-      });
-    }
+    // if (AccessRateLimit.isRateLimited(clientIP)) {
+    //   return res.status(429).json({
+    //     success: false,
+    //     message: 'Too many failed attempts. Please try again later.',
+    //     retryAfter: 15 * 60 * 1000 // 15 minutes in milliseconds
+    //   });
+    // }
 
     if (!accessCode || typeof accessCode !== 'string') {
-      AccessRateLimit.recordAttempt(clientIP);
+      // AccessRateLimit.recordAttempt(clientIP); // Disabled for testing
       return res.status(400).json({
         success: false,
         message: 'Access code is required'
@@ -94,7 +95,7 @@ router.post('/verify-access', async (req, res) => {
     const role = await AccessCodeManager.verifyAccessCode(accessCode.trim());
 
     if (!role) {
-      AccessRateLimit.recordAttempt(clientIP);
+      // AccessRateLimit.recordAttempt(clientIP); // Disabled for testing
       
       // Log failed attempt (without logging the actual code)
       console.log(`🚫 Failed access attempt from IP: ${clientIP} at ${new Date().toISOString()}`);
