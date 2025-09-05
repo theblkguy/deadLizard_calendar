@@ -98,6 +98,37 @@ router.get('/google-working-callback', async (req, res) => {
   }
 });
 
+// Test route to verify JWT token encoding/decoding works
+router.get('/test-token', (req, res) => {
+  try {
+    console.log('🧪 Test token route called');
+    
+    // Create a test JWT token
+    const testToken = jwt.sign(
+      {
+        userId: 'test_12345',
+        email: 'test@example.com',
+        name: 'Test User',
+        picture: 'https://via.placeholder.com/40',
+        role: 'user'
+      },
+      process.env.JWT_SECRET || 'deadlizard-jwt-secret',
+      { expiresIn: '24h' }
+    );
+    
+    console.log('🧪 Test token created:', testToken);
+    console.log('🧪 Test token length:', testToken.length);
+    console.log('🧪 Test token parts:', testToken.split('.').length);
+    
+    // Redirect with URL-encoded token
+    res.redirect(`https://deadlizardjam.online/auth/callback?token=${encodeURIComponent(testToken)}&test=true`);
+    
+  } catch (error) {
+    console.error('❌ Test token error:', error);
+    res.redirect(`https://deadlizardjam.online/auth/callback?error=test_failed`);
+  }
+});
+
 // Standard Google OAuth route (what people expect)
 router.get('/google', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
