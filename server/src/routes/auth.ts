@@ -76,15 +76,50 @@ router.get('/google-working-callback', async (req, res) => {
       name: userProfile.name
     });
     
-    // Create JWT token
+    // Find or create user in database
+    let user;
+    try {
+      // Check if user already exists
+      user = await User.findOne({ googleId: userProfile.id });
+      
+      if (!user) {
+        // Create new user
+        user = new User({
+          googleId: userProfile.id,
+          email: userProfile.email,
+          name: userProfile.name,
+          picture: userProfile.picture,
+          role: 'user'
+        });
+        
+        await user.save();
+        console.log('✅ Created new user in database:', user.email);
+      } else {
+        console.log('✅ Found existing user in database:', user.email);
+      }
+    } catch (dbError) {
+      console.error('❌ Database error during user creation:', dbError);
+      // If database fails, continue with temporary user data
+      console.log('⚠️ Continuing without database - creating temporary JWT');
+    }
+    
+    // Create JWT token with proper user ID
+    const jwtPayload = user ? {
+      userId: user._id.toString(), // Use MongoDB ObjectId for proper database lookup
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      role: user.role
+    } : {
+      userId: `google_${userProfile.id}`, // Fallback if database failed
+      email: userProfile.email,
+      name: userProfile.name,
+      picture: userProfile.picture,
+      role: 'user'
+    };
+    
     const token = jwt.sign(
-      {
-        userId: `google_${userProfile.id}`,
-        email: userProfile.email,
-        name: userProfile.name,
-        picture: userProfile.picture,
-        role: 'user'
-      },
+      jwtPayload,
       process.env.JWT_SECRET || 'deadlizard-jwt-secret',
       { expiresIn: '24h' }
     );
