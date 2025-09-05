@@ -310,15 +310,35 @@ router.get('/google/callback', async (req, res) => {
       name: userProfile.name
     });
     
-    // Create JWT token
-    const token = jwt.sign(
-      {
-        userId: `google_${userProfile.id}`,
+    // Find or create user in MongoDB
+    let user = await User.findOne({ email: userProfile.email });
+    
+    if (!user) {
+      console.log('🔍 Creating new user in database:', userProfile.email);
+      user = new User({
         email: userProfile.email,
         name: userProfile.name,
-        picture: userProfile.picture,
-        role: 'user'
-      },
+        role: 'user',
+        googleId: userProfile.id,
+        picture: userProfile.picture
+      });
+      await user.save();
+      console.log('✅ New user created with ID:', user._id);
+    } else {
+      console.log('✅ Existing user found with ID:', user._id);
+    }
+
+    // Create JWT token with MongoDB ObjectId
+    const jwtPayload = {
+      userId: user._id.toString(), // Use MongoDB ObjectId instead of google_ prefix
+      email: userProfile.email,
+      name: userProfile.name,
+      picture: userProfile.picture,
+      role: 'user'
+    };
+    
+    const token = jwt.sign(
+      jwtPayload,
       process.env.JWT_SECRET || 'deadlizard-jwt-secret',
       { expiresIn: '24h' }
     );
