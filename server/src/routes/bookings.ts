@@ -108,12 +108,33 @@ router.get('/month/:year/:month', async (req: any, res: any) => {
     const endDate = new Date(yearNum, monthNum, 0); // Last day of month
     const endDateStr = `${year}-${(monthNum).toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}`;
     
-    const bookings = await Booking.find({
+    // Get all bookings for the month first
+    const allBookings = await Booking.find({
       date: { $gte: startDate, $lte: endDateStr },
       status: 'confirmed'
     }).select('_id date startTime endTime title description userName status priority').sort({ date: 1, startTime: 1 });
     
-    res.json(bookings);
+    // Filter bookings to show those that haven't completely ended yet
+    const now = new Date();
+    const currentDateStr = now.toISOString().split('T')[0];
+    const currentTimeStr = now.toTimeString().slice(0, 5); // HH:MM format
+    
+    const visibleBookings = allBookings.filter(booking => {
+      // Always show future bookings (date > today)
+      if (booking.date > currentDateStr) {
+        return true;
+      }
+      
+      // For today's bookings, only hide if current time is past the END time
+      if (booking.date === currentDateStr) {
+        return currentTimeStr < booking.endTime;
+      }
+      
+      // Hide past date bookings
+      return false;
+    });
+    
+    res.json(visibleBookings);
   } catch (error) {
     console.error('Error fetching bookings for month:', error);
     res.status(500).json({ message: 'Error fetching bookings' });
